@@ -9,7 +9,7 @@
 ## TODO: save to a logfile, change to all functions, 
 
 SERVICES="avahi-daemon deluge-daemon cron bubbleupnpserver fail2ban minidlna nginx nullmailer monitorix"    ## Declare what services to stop and start
-SUBDIR=$HOSTNAME_backups   ## Setting up backup directories
+SUBDIR=RaspberryPi2_backups   ## Setting up backup directories
 DIR=/media/1TB/$SUBDIR  ## Change to where you want the backups to be stored
 KEEPDAILY=7       ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28     ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
