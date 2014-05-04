@@ -43,10 +43,10 @@ function ListBackups {
 function CheckDiskSpace {
       # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
       # awk grabs the fourth column (Free), and cut removes the trailing G.
-      DESTDISKSPACE=`df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1`
+      DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
       # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
       # awk grabs the second column (Size), and cut removes the trailing G.
-      SOURCEDISKSPACE=`df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1`
+      SOURCEDISKSPACE=$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)
 
       # Disk capacity check
       echo -e "${green}${bold}Checking if there is enough diskspace for one more backup...${NC}${normal}"      
@@ -148,6 +148,7 @@ if [ $RESULT = 0 ];
       echo -e "${yellow}Checking for weekly backups${NC}"
       if [[ ! -f $DIR*.weekly.img ]]; then 
             echo -e "${yellow}No weekly backups found so I am making the first one...${NC}"
+            CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
       else
             echo -e "${yellow}Weekly backups were found. Checking if a new one is needed...${NC}"
@@ -156,14 +157,16 @@ if [ $RESULT = 0 ];
                   echo -e "${yellow}None are older than 7 days${NC}" 
             else
                   echo -e "${yellow}Need a new weekly backup.  Making it now...${NC}"
-                  sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
-                  sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
+                  CheckDiskSpace
+                  sudo pv $OFILEFINAL > $OFILEFINALWEEKLY	## pv gives the user some feedback
+                  sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
       fi
       ## Make monthly backup
       echo -e "${yellow}Checking for monthly backups${NC}"
       if [[ ! -f $DIR*.monthly.img ]]; then 
             echo -e "${yellow}No monthly backups found so I am making the first one...${NC}"
+            CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
       else
             echo -e "${yellow}Monthly backups were found. Checking if a new one is needed...${NC}"
@@ -172,11 +175,11 @@ if [ $RESULT = 0 ];
                   echo -e "${yellow}None are older than 30 days${NC}" 
             else
                   echo -e "${yellow}Need a new monthly backup.  Making it now...${NC}"
+                  CheckDiskSpace
                   sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
                   sudo find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \;
             fi
       fi
-
       ListBackups
       exit 0
 # Else remove attempted backup file
