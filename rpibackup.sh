@@ -22,8 +22,8 @@ cyan='\e[0;36m'
 yellow='\e[1;33m'
 purple='\e[0;35m'
 NC='\e[0m' #No Color
-bold=`tput bold`
-normal=`tput sgr0`
+bold=$(tput bold)
+normal=$(tput sgr0)
 
 ##List all the files with ".img" in $DIR
 ##Then list all files without ".img"
@@ -66,7 +66,7 @@ echo -e "${green}${bold}Starting RaspberryPi backup process!${NC}${normal}"
 echo ""
 
 ## First check if pv package is installed, if not, install it first
-PACKAGESTATUS=`dpkg -s pv | grep Status`;
+PACKAGESTATUS=$(dpkg -s pv | grep Status);
 
 if [[ $PACKAGESTATUS == S* ]]
    then
@@ -118,7 +118,7 @@ done
 # Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
 echo ""
 echo -e "${green}${bold}Backing up SD card to img file on HDD${NC}${normal}"
-SDSIZE=`sudo blockdev --getsize64 /dev/mmcblk0`;
+SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
 sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
 
 # Wait for DD to finish and catch result
