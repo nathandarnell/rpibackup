@@ -14,6 +14,7 @@ DIR=/media/1TB/$SUBDIR  ## Change to where you want the backups to be stored
 KEEPDAILY=7       ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28     ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
 KEEPMONTHLY=90    ## So does this (3 months = 90 days = 3 monthly backups kept)
+TESTRUN=0         ## Set this to "0" if you want to write to the disk.  CHange it to do a test run to just use "TOUCH" and clean up after itself.
 
 ## Setting up echo fonts
 red='\e[0;31m'
@@ -56,6 +57,12 @@ function CheckDiskSpace {
             else
             echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
       fi
+}
+
+## Does a test run of the write with TOUCH and cleans up after itself
+##################################################################
+function TestRun {
+      
 }
 
 ## Screen clear
@@ -122,12 +129,21 @@ break
 fi
 done 
 
-# Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
-echo ""
-echo -e "${green}${bold}Backing up SD card to img file on HDD${NC}${normal}"
-SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
-sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
-
+## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
+if [ $TESTRUN == 0 ] 
+then
+      WriteBackupToDisk
+else
+      TestRun
+fi
+## Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
+##################################################################
+function WriteBackupToDisk {
+      echo ""
+      echo -e "${green}${bold}Backing up SD card to img file on HDD${NC}${normal}"
+      SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
+      sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
+}
 # Wait for DD to finish and catch result
 RESULT=$?
 
