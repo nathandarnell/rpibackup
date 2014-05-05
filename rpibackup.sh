@@ -103,6 +103,13 @@ OFILEFINALMONTHLY=$OFILEFINAL.monthly.img
 # First sync disks
 sync; sync
 
+## Move this to the top
+##################################################################
+function DeclaredServices {
+      
+      
+}
+
 ## Quit the declared services
 for service in $SERVICES
 do
