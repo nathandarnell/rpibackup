@@ -59,11 +59,15 @@ function CheckDiskSpace {
       fi
 }
 
+
 ## Does a test run of the write with TOUCH and cleans up after itself
 ##################################################################
 function TestRun {
-      
+      echo ""
+      echo -e "${green}${bold}Doing a test run of backing up SD card to .IMG file on HDD${NC}${normal}"
+      touch $DIR/$OFILE 
 }
+
 
 ## Screen clear
 clear
@@ -102,10 +106,10 @@ OFILE="$DIR/backup_$(date +%Y%m%d_%H%M%S)"
 OFILEFINAL=$OFILE.daily.img
 
 # Create final weekly filename, with suffix
-OFILEFINALWEEKLY=$OFILEFINAL.weekly.img
+OFILEFINALWEEKLY=${OFILEFINAL/daily./weekly.}
 
 # Create final monthly filename, with suffix
-OFILEFINALMONTHLY=$OFILEFINAL.monthly.img
+OFILEFINALWEEKLY=${OFILEFINAL/daily./monthly.}
 
 # First sync disks
 sync; sync
@@ -140,7 +144,7 @@ fi
 ##################################################################
 function WriteBackupToDisk {
       echo ""
-      echo -e "${green}${bold}Backing up SD card to img file on HDD${NC}${normal}"
+      echo -e "${green}${bold}Backing up SD card to .IMG file on HDD${NC}${normal}"
       SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
       sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
 }
