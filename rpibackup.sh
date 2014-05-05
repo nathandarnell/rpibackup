@@ -146,7 +146,7 @@ if [ $RESULT = 0 ];
       
       ## Make weekly backup
       echo -e "${yellow}Checking for weekly backups${NC}"
-      if [[ ! -f $DIR*.weekly.img ]]; then 
+      if [[ ! -f $DIR/*.weekly.img ]]; then 
             echo -e "${yellow}No weekly backups found so I am making the first one...${NC}"
             CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
@@ -164,7 +164,7 @@ if [ $RESULT = 0 ];
       fi
       ## Make monthly backup
       echo -e "${yellow}Checking for monthly backups${NC}"
-      if [[ ! -f $DIR*.monthly.img ]]; then 
+      if [[ ! -f $DIR/*.monthly.img ]]; then 
             echo -e "${yellow}No monthly backups found so I am making the first one...${NC}"
             CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
