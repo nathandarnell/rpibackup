@@ -92,7 +92,7 @@ fi
 OFILE="$DIR/backup_$(date +%Y%m%d_%H%M%S)"
 
 # Create final filename, with suffix
-OFILEFINAL=$OFILE.img
+OFILEFINAL=$OFILE.daily.img
 
 # Create final weekly filename, with suffix
 OFILEFINALWEEKLY=$OFILEFINAL.weekly.img
@@ -138,10 +138,16 @@ if [ $RESULT = 0 ];
       echo ""
       echo -e "${green}${bold}RaspberryPI backup process completed! The Backup file is: $OFILEFINAL${NC}${normal}"
       echo -e "${yellow}Looking for backups older than $KEEPDAILY days${NC}"
-## TODO: make this a IF statement to provide better feedback
-      sudo find $DIR -maxdepth 1 -name "*.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
-      echo -e "${yellow}Removing backups older than $KEEPDAILY days${NC}"
-      sudo find $DIR -maxdepth 1 -name "*.img" -mtime +$KEEPDAILY -exec rm {} \;
+## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
+            echo -e "${yellow}Removing backups older than $KEEPDAILY days${NC}"
+            sudo find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
+            ListBackups
+      else
+            echo -e "${yellow}There were no backups older than $KEEPDAILY days to delete${NC}"
+      fi
+      sudo find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
+
       echo -e "${cyan}If any backups older than $KEEPDAILY days were found, they were deleted${NC}"
       
       ## Make weekly backup
