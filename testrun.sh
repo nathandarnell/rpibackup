@@ -175,11 +175,7 @@ function WeeklyMonthlyBackups {
       echo "$FUNCNAME"
       ## Make weekly backup
       echo -e "Checking for weekly backups"
-      if [[ ! -f $DIR/*.weekly.img ]]; then 
-            echo -e "No weekly backups found so I am making the first one..."
-            CheckDiskSpace
-            sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
-      else
+      if [[ -f $DIR/*.weekly.img ]]; then 
             echo -e "Weekly backups were found. Checking if a new one is needed..."
             if test $(find $DIR/*.weekly.img -mtime -7)
             then
@@ -190,6 +186,10 @@ function WeeklyMonthlyBackups {
                   sudo pv $OFILEFINAL > $OFILEFINALWEEKLY	## pv gives the user some feedback
                   sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
+      else
+            echo -e "No weekly backups found so I am making the first one..."
+            CheckDiskSpace
+            sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
       fi
       ## Make monthly backup
       echo -e "Checking for monthly backups"
@@ -246,7 +246,7 @@ function TestRun {
       
       echo "Cleaning up after myself by deleting the files that were just made"
       
-      sudo rm -f $OFILE $OFILEFINAL $OFILEFINALWEEKLY $OFILEFINALMONTHLY
+##      sudo rm -f $OFILE $OFILEFINAL $OFILEFINALWEEKLY $OFILEFINALMONTHLY
 }
 
 InitialSetup
