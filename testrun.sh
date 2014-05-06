@@ -224,7 +224,7 @@ function TestRun {
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD"
       touch $OFILE 
 
-      sudo pv $OFILE > $OFILEFINAL
+      sudo mv $OFILE $OFILEFINAL
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo -e "Looking for backups older than $KEEPDAILY days"
