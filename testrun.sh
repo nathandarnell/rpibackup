@@ -177,10 +177,10 @@ function WeeklyMonthlyBackups {
       echo -e "Checking for weekly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img' -print -quit)" ]; then 
             echo -e "Weekly backups were found. Checking if a new one is needed..."
-            if [ $(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit) -ge 7 ]
+            if [ "$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit)" -ge "7" ]
             then
                   echo -e "None are older than 7 days" 
-                  VAR=$(find $DIR/*.weekly.img -mtime -7)
+                  VAR=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit)
                   echo -e "$VAR" 
             else
                   echo -e "Need a new weekly backup.  Making it now..."
