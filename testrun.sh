@@ -15,7 +15,7 @@ DIR=/media/1TB/$SUBDIR  ## Change to where you want the backups to be stored
 KEEPDAILY=7       ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28     ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
 KEEPMONTHLY=90    ## So does this (3 months = 90 days = 3 monthly backups kept)
-TESTRUN=0         ## Set this to "0" if you want to write to the disk.  CHange it to do a test run to just use "TOUCH" and clean up after itself.
+TESTRUN=1         ## Set this to "0" if you want to write to the disk.  CHange it to do a test run to just use "TOUCH" and clean up after itself.
 ##################################################################
 ## /CONFIGURE
 ##################################################################
@@ -137,6 +137,7 @@ function WriteBackupToDisk {
       sync; sync
       echo ""
       echo -e "Backing up SD card to .IMG file on HDD"
+      ## Write the image to the drive
       SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
       sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
@@ -156,6 +157,8 @@ function WriteBackupToDisk {
 
       echo -e "If any backups older than $KEEPDAILY days were found, they were deleted"
       
+      ## Make the weekly and monthly backups
+      WeeklyMonthlyBackups
 }
 
 
@@ -201,16 +204,7 @@ function WeeklyMonthlyBackups {
             fi
       fi
       ListBackups
-      exit 0
-# Else remove attempted backup file
-   else
-      echo ""
-      echo -e "Backup failed!"
-      sudo rm -f $OFILE
-      ListBackups
-      echo -e "RaspberryPI backup process failed!"
-      exit 1
-fi
+
 }
 
 
@@ -223,9 +217,7 @@ function TestRun {
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD"
       touch $DIR/$OFILE 
 
-if [ $RESULT = 0 ];
-   then
-     sudo pv $OFILE > $OFILEFINAL
+      sudo pv $OFILE > $OFILEFINAL
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo -e "Looking for backups older than $KEEPDAILY days"
@@ -250,9 +242,7 @@ if [ $RESULT = 0 ];
       sudo rm -f $OFILE $OFILEFINAL $OFILEFINALWEEKLY $OFILEFINALMONTHLY
 }
 
-
-
-
+InitialSetup
 
 DeclaredServices stop
 
