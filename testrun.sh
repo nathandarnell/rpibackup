@@ -177,7 +177,7 @@ function WeeklyMonthlyBackups {
       echo -e "Checking for weekly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img' -print -quit)" ]; then 
             echo -e "Weekly backups were found. Checking if a new one is needed..."
-            if [ $(find $DIR/*.weekly.img -mtime -7) ]
+            if [ $(find $DIR/*.weekly.img -mtime -7) -ge 7 ]
             then
                   echo -e "None are older than 7 days" 
                   VAR=$(find $DIR/*.weekly.img -mtime -7)
@@ -195,13 +195,13 @@ function WeeklyMonthlyBackups {
       fi
       ## Make monthly backup
       echo -e "Checking for monthly backups"
-      if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img' -print -quit)" ]; then 
+      if [ ! -n "$(find $DIR -maxdepth 1 -name '*monthly.img' -print -quit)" ]; then 
             echo -e "No monthly backups found so I am making the first one..."
             CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
       else
             echo -e "Monthly backups were found. Checking if a new one is needed..."
-            if test $(find $DIR/*.monthly.img -mtime -30)
+            if [ $(find $DIR/*.monthly.img -mtime -30) -ge 30 ]
             then
                   echo -e "None are older than 30 days" 
             else
