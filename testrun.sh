@@ -26,6 +26,7 @@ OFILEFINALWEEKLY=${OFILEFINAL/daily./weekly.}   # Create final weekly filename, 
 OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename, with suffix
 
 function InitialSetup {
+      echo "$FUNCNAME"
       ## Screen clear
       clear
 
@@ -62,6 +63,7 @@ function InitialSetup {
 ##Then list all files without ".img"
 ##################################################################
 function ListBackups {
+      echo "$FUNCNAME"
       echo ""
       echo -e "Last backups on HDD:"
       sudo find $DIR -maxdepth 1 -name "*.img"
@@ -77,6 +79,7 @@ function ListBackups {
 ## Borrowed and adapted from http://hustoknow.blogspot.com/2011/01/bash-script-to-check-disk-space.html
 ##################################################################
 function CheckDiskSpace {
+      echo "$FUNCNAME"
       # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
       # awk grabs the fourth column (Free), and cut removes the trailing G.
       DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
@@ -100,6 +103,7 @@ function CheckDiskSpace {
 ## Turn on and off the services listed in $SERVICES
 ##################################################################
 function DeclaredServices {
+      echo "$FUNCNAME"
       
       case "$1" in
       stop)
@@ -133,6 +137,7 @@ function DeclaredServices {
 ## Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
 ##################################################################
 function WriteBackupToDisk {
+      echo "$FUNCNAME"
       # First sync disks
       sync; sync
       echo ""
@@ -167,6 +172,7 @@ function WriteBackupToDisk {
 ## Make weekly and monthly backups
 ##################################################################
 function WeeklyMonthlyBackups {
+      echo "$FUNCNAME"
       ## Make weekly backup
       echo -e "Checking for weekly backups"
       if [[ ! -f $DIR/*.weekly.img ]]; then 
@@ -213,6 +219,7 @@ function WeeklyMonthlyBackups {
 ## Does a test run of the write with TOUCH and cleans up after itself
 ##################################################################
 function TestRun {
+      echo "$FUNCNAME"
       echo ""
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD"
       touch $OFILE 
