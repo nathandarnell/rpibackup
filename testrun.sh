@@ -232,7 +232,7 @@ function TestRun {
       echo -e "Looking for backups older than $KEEPDAILY days"
 ## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
       DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
-      echo "$DAILYBACKUPNAMES
+      echo "$DAILYBACKUPNAMES"
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
             echo -e "Removing backups older than $KEEPDAILY days"
             sudo find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
