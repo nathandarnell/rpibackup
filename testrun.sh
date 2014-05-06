@@ -181,7 +181,7 @@ function WeeklyMonthlyBackups {
             then
                   echo -e "None are older than 7 days" 
                   VAR=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit)
-                  echo -e "$VAR" 
+                  echo -e "MY BEST BET AT WEEKLY BACKUP NAMES $VAR" 
             else
                   echo -e "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
@@ -231,6 +231,8 @@ function TestRun {
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo -e "Looking for backups older than $KEEPDAILY days"
 ## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
+      DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
+      echo "$DAILYBACKUPNAMES
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
             echo -e "Removing backups older than $KEEPDAILY days"
             sudo find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
