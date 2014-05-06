@@ -215,7 +215,7 @@ function WeeklyMonthlyBackups {
 function TestRun {
       echo ""
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD"
-      touch $DIR/$OFILE 
+      touch $OFILE 
 
       sudo pv $OFILE > $OFILEFINAL
       echo ""
