@@ -175,13 +175,13 @@ function WeeklyMonthlyBackups {
       echo "$FUNCNAME"
       ## Make weekly backup
       echo -e "Checking for weekly backups"
-      if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img' -print -quit)" ]; then 
+      if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
             echo -e "Weekly backups were found. Checking if a new one is needed..."
-            if [ "$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit)" -ge "7" ]
+            if [ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime -7 | wc -l)" -ge "7" ]
             then
                   echo -e "None are older than 7 days" 
-                  VAR=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime -7 -print -quit)
-                  echo -e "MY BEST BET AT WEEKLY BACKUP NAMES $VAR" 
+                  WEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img')
+                  echo -e "MY BEST BET AT WEEKLY BACKUP NAMES $WEEKLYBACKUPNAMES" 
             else
                   echo -e "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
@@ -221,28 +221,29 @@ function WeeklyMonthlyBackups {
 ## Does a test run of the write with TOUCH and cleans up after itself
 ##################################################################
 function TestRun {
+      echo ""
       echo "$FUNCNAME"
       echo ""
-      echo -e "Doing a test run of backing up SD card to .IMG file on HDD"
+      echo -e "Doing a test run of backing up SD card to .IMG file on HDD..."
       touch $OFILE 
-
       sudo mv $OFILE $OFILEFINAL
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
-      echo -e "Looking for backups older than $KEEPDAILY days"
-## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
+      echo ""
+      echo "The daily backups are:"
       DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
       echo "$DAILYBACKUPNAMES"
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
+      echo -e "Looking for backups older than $KEEPDAILY days..."
+
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" | wc -l)" -ge "1" ]; then
             echo -e "Removing backups older than $KEEPDAILY days"
-            sudo find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
+            find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" -exec echo Removing old backups: {} \; -exec rm {} \;
             ListBackups
       else
             echo -e "There were no backups older than $KEEPDAILY days to delete"
       fi
-      sudo find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
-
-      echo -e "If any backups older than $KEEPDAILY days were found, they were deleted"
+      echo "The daily backups are:"
+      echo "$DAILYBACKUPNAMES"
      
       WeeklyMonthlyBackups
       
