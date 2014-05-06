@@ -180,6 +180,8 @@ function WeeklyMonthlyBackups {
             if test $(find $DIR/*.weekly.img -mtime -7)
             then
                   echo -e "None are older than 7 days" 
+                  VAR=$(find $DIR/*.weekly.img -mtime -7)
+                  echo -e "$VAR" 
             else
                   echo -e "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
