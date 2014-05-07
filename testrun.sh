@@ -281,7 +281,7 @@ function TestRun {
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
-            find "$DIR" -maxdepth 1 -type f -name "*.daily.img" -printf '%T@ %p\0' | sort -r -z -n | awk 'BEGIN { RS="\0"; ORS="\0"; FS="" } NR > "$KEEPDAILY" { sub("^[0-9]*(.[0-9]*)? ", ""); print }' | xargs -0 echo
+            find "$DIR" -maxdepth 1 -type f -name "*.daily.img" -printf '%T@ %p\0' | sort -r -z -n | awk 'BEGIN { RS="\0"; ORS="\0"; FS="" } NR > "$KEEPDAILY" { sub("^[0-9]*(.[0-9]*)? ", ""); print }' | xargs -0 rm -f
             
             
             ListBackups
