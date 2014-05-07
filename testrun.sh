@@ -258,15 +258,39 @@ function TestRun {
       echo "The daily backups are:"
       DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
       echo "$DAILYBACKUPNAMES"
-      echo -e "Looking for backups older than $KEEPDAILY days..."
+      
+      
+      ## Remove old daily backups beyond $KEEPDAILY
+      echo ""
+      echo "Looking for backups older than $KEEPDAILY days..."
 
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" | wc -l)" -ge "1" ]; then
-            echo -e "Removing backups older than $KEEPDAILY days"
+            echo "Removing backups older than $KEEPDAILY days..."
             find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" -exec echo Removing old backups: {} \; -exec rm {} \;
             ListBackups
       else
-            echo -e "There were no backups older than $KEEPDAILY days to delete"
+            echo ""
+            echo "There were no backups older than $KEEPDAILY days to delete"
       fi
+      
+      
+      ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
+      echo ""
+      echo "Looking for more daily backups than $KEEPDAILY..."
+
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
+            echo "Removing backups so there are only $KEEPDAILY daily backups..."
+            
+            find "$DIR" -maxdepth 1 -type f -name "*.daily.img" -printf '%T@ %p\0' | sort -r -z -n | awk 'BEGIN { RS="\0"; ORS="\0"; FS="" } NR > "$KEEPDAILY" { sub("^[0-9]*(.[0-9]*)? ", ""); print }' | xargs -0 echo
+            
+            
+            ListBackups
+      else
+            echo "There were no backups older than $KEEPDAILY days to delete or more in number than $KEEPDAILY"
+      fi
+      
+      
+      
      
       WeeklyMonthlyBackups
       
