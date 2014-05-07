@@ -26,7 +26,9 @@ OFILEFINALWEEKLY=${OFILEFINAL/daily./weekly.}   # Create final weekly filename, 
 OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename, with suffix
 
 function InitialSetup {
+      echo ""
       echo "$FUNCNAME"
+      echo ""
       ## Screen clear
       clear
 
@@ -63,6 +65,7 @@ function InitialSetup {
 ##Then list all files without ".img"
 ##################################################################
 function ListBackups {
+      echo ""
       echo "$FUNCNAME"
       echo ""
       echo -e "Last backups on HDD:"
@@ -79,7 +82,9 @@ function ListBackups {
 ## Borrowed and adapted from http://hustoknow.blogspot.com/2011/01/bash-script-to-check-disk-space.html
 ##################################################################
 function CheckDiskSpace {
+      echo ""
       echo "$FUNCNAME"
+      echo ""
       # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
       # awk grabs the fourth column (Free), and cut removes the trailing G.
       DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
@@ -103,7 +108,9 @@ function CheckDiskSpace {
 ## Turn on and off the services listed in $SERVICES
 ##################################################################
 function DeclaredServices {
+      echo ""
       echo "$FUNCNAME"
+      echo ""
       
       case "$1" in
       stop)
@@ -176,7 +183,7 @@ function WeeklyMonthlyBackups {
       OLDWEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime +7)
       echo ""      
       echo "$FUNCNAME"
-      echo "$FUNCNAME"
+      echo ""
 
       echo "Checking for weekly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
@@ -206,21 +213,22 @@ function WeeklyMonthlyBackups {
       fi
       ## Make monthly backup
       echo -e "Checking for monthly backups"
-      if [ ! -n "$(find $DIR -maxdepth 1 -name '*monthly.img' -print -quit)" ]; then 
-            echo -e "No monthly backups found so I am making the first one..."
-            CheckDiskSpace
-            sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
-      else
-            echo -e "Monthly backups were found. Checking if a new one is needed..."
-            if [ $(find $DIR/*.monthly.img -mtime -30) -ge 30 ]
+      if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
+           echo -e "Monthly backups were found. Checking if a new one is needed..."
+
+            if [ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]
             then
                   echo -e "None are older than 30 days" 
             else
                   echo -e "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
-                  sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
-                  sudo find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \;
-            fi
+                  sudo pv $OFILEFINAL > $OFILEFINALMONTHLY  ## pv gives the user some feedback
+                  sudo find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
+            fi 
+      else
+            echo -e "No monthly backups found so I am making the first one..."
+            CheckDiskSpace
+            sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
       fi
       ListBackups
 
