@@ -264,9 +264,9 @@ function TestRun {
       echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" | wc -l)" -ge "1" ]; then
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]; then
             echo "Removing backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.daily.img" -mtime "$KEEPDAILY" -exec echo Removing old backups: {} \; -exec rm {} \;
+            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec echo Removing old backups: {} \; -exec rm {} \;
             ListBackups
       else
             echo ""
