@@ -281,10 +281,8 @@ function TestRun {
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
-            echo "New formula..."
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img ! -newer $(ls -t | sed '8!d') -exec rm -i {} \;
-            echo "Old formula..."
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -i
+            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
             
             
             ListBackups
