@@ -85,6 +85,9 @@ function CheckDiskSpace {
       echo ""
       echo "$FUNCNAME"
       echo ""
+      ## No need to check diskspace if we're not writing real files!
+      if [ "$TESTRUN" == "0" ]
+      then
       # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
       # awk grabs the fourth column (Free), and cut removes the trailing G.
       DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
@@ -99,6 +102,9 @@ function CheckDiskSpace {
             exit 1
             else
             echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
+      fi
+      else
+            echo "Not going to check diskspace since we're only TOUCHing files here..."
       fi
 }
 
