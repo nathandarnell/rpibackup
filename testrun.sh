@@ -172,18 +172,29 @@ function WriteBackupToDisk {
 ## Make weekly and monthly backups
 ##################################################################
 function WeeklyMonthlyBackups {
+      WEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img')
+      OLDWEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime +7)
+      echo ""      
       echo "$FUNCNAME"
-      ## Make weekly backup
-      echo -e "Checking for weekly backups"
+      echo "$FUNCNAME"
+
+      echo "Checking for weekly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
             echo -e "Weekly backups were found. Checking if a new one is needed..."
-            if [ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime -7 | wc -l)" -ge "7" ]
+
+
+## compare the weekly backups older than 7 days against the total weekly backups
+            if [ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]
             then
-                  echo -e "None are older than 7 days" 
-                  WEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img')
-                  echo -e "MY BEST BET AT WEEKLY BACKUP NAMES $WEEKLYBACKUPNAMES" 
+                  echo "None are older than 7 days" 
+                  
+                  echo "MY BEST BET AT WEEKLY BACKUP NAMES" 
+                  echo "$WEEKLYBACKUPNAMES" 
+                   
+                  echo "MY BEST BET AT old WEEKLY BACKUP NAMES" 
+                  echo "$OLDWEEKLYBACKUPNAMES" 
             else
-                  echo -e "Need a new weekly backup.  Making it now..."
+                  echo "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
                   sudo pv $OFILEFINAL > $OFILEFINALWEEKLY	## pv gives the user some feedback
                   sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
