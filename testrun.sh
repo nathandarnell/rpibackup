@@ -171,6 +171,8 @@ function WriteBackupToDisk {
       
       ## Make the weekly and monthly backups
       WeeklyMonthlyBackups
+      
+      ListBackups
 }
 
 
@@ -230,8 +232,6 @@ function WeeklyMonthlyBackups {
             CheckDiskSpace
             sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
       fi
-      ListBackups
-
 }
 
 
@@ -261,8 +261,6 @@ function TestRun {
       else
             echo -e "There were no backups older than $KEEPDAILY days to delete"
       fi
-      echo "The daily backups are:"
-      echo "$DAILYBACKUPNAMES"
      
       WeeklyMonthlyBackups
       
