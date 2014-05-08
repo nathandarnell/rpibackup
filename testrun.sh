@@ -148,7 +148,7 @@ function CheckDiskSpace {
 
             # Disk capacity check
             echo "Checking if there is enough diskspace for one more backup..."      
-            if [ ${SOURCEDISKSPACE} -ge ${DESTDISKSPACE} ]; then
+            if [ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]; then
                         echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
                         exit 1
             else
