@@ -24,7 +24,7 @@ DIR=/media/1TB/$SUBDIR        ## Change to where you want the backups to be stor
 KEEPDAILY=7                   ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28                 ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
 KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly backups kept)
-TESTRUN=1                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
+TESTRUN=0                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
 TESTRUNPERM=1                 ## Set this to "0" if you don't want to leave the TestRun files on the disk, but delete them (Leaving the files can be useful for testing the weekly and monthly backups)
 ##################################################################
 ## /CONFIGURE
@@ -229,8 +229,7 @@ function WriteBackupToDisk {
       echo ""
       echo "RaspberryPI backup process completed!"
       echo "The Backup file is: $OFILEFINAL"
-      echo ""
-      echo "The daily backups are:"
+
       ListBackups daily
       
       ## Remove old daily backups beyond $KEEPDAILY
