@@ -78,12 +78,40 @@ function ListBackups {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      echo "Last backups on HDD:"
-      find $DIR -maxdepth 1 -name "*.img"
-      echo ""
-      echo "Failed backups on HDD:"
-      find $DIR/ -maxdepth 1 -mindepth 1 ! -name "*.img"
-      echo ""
+      
+            if [[ $# -eq 0 ]] ; then
+                        ListBackups daily
+                        ListBackups weekly
+                        ListBackups monthly
+                        ListBackups failed
+            fi
+      
+      case "$1" in
+      daily)
+            echo ""
+            echo "The Daily backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*daily.img' | sort
+      ;;
+      weekly)
+            echo ""
+            echo "The Weekly backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
+      ;;
+      monthly)
+            echo ""
+            echo "The Monthly backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
+      ;;
+      failed)
+            echo ""
+            echo "The Failed backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
+      ;;
+      esac
 }
 
 
@@ -279,8 +307,7 @@ function TestRun {
       echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo ""
       echo "The daily backups are:"
-      DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
-      echo "$DAILYBACKUPNAMES"
+      find $DIR -maxdepth 1 -name "*.daily.img"
       
       
       ## Remove old daily backups beyond $KEEPDAILY
