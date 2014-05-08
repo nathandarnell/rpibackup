@@ -155,18 +155,11 @@ function DeclaredServices {
             for service in $SERVICES
             do
             
-            if [ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ];
-                  then
-                        echo "Starting $service..."
-                        /etc/init.d/"$service" start
-                  ## Check to see if it's really running.  May be redundant since "service start" seems to do that already
-                        if [ -z "$(pgrep -f "$service" > /dev/null)" ]
+                        if [ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ];
                         then
-                                    echo "$service not running!"
+                                    echo "Starting $service..."
+                                    /etc/init.d/"$service" start
                         fi
-                  fi
-            
-
             done 
       ;;
       esac
