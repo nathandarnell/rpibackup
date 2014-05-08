@@ -88,31 +88,26 @@ function ListBackups {
       
       case "$1" in
       daily)
-            echo ""
             echo "The Daily backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*daily.img' | sort
       ;;
       weekly)
-            echo ""
             echo "The Weekly backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
       ;;
       monthly)
-            echo ""
             echo "The Monthly backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
       ;;
       failed)
-            echo ""
             echo "The Failed backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
       ;;
       all)
-            echo ""
             echo "The Daily backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*daily.img' | sort
@@ -124,6 +119,7 @@ function ListBackups {
             echo "The Monthly backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
+            echo ""
             echo "The Failed backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
@@ -284,6 +280,7 @@ function WeeklyMonthlyBackups {
       ListBackups weekly
       
       ## Make monthly backup
+      echo ""
       echo "Checking for monthly backups..."
       if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
             echo ""
@@ -351,9 +348,11 @@ function TestRun {
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
             echo ""
             echo "There are more than $KEEPDAILY daily backups!"
+            echo ""
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+            echo ""
             echo "Deleting:"
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
