@@ -255,6 +255,7 @@ function WeeklyMonthlyBackups {
       echo "$FUNCNAME"
       echo ""
 
+
       echo "Checking for weekly backups..."
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
             echo ""
@@ -270,14 +271,30 @@ function WeeklyMonthlyBackups {
                   echo "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
                   pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
-                  find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
       else
             echo "No weekly backups found so I am making the first one..."
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
+
+
+      ## Remove old weekly backups beyond $KEEPWEEKLY
+      echo ""
+      echo "Looking for backups older than $KEEPWEEKLY days..."
+
+      if [ "$(find $DIR -maxdepth 1 -name "*.weekly.img" -mtime +"$KEEPWEEKLY" | wc -l)" -ge "1" ]; then
+            echo ""
+            echo "Found backups older than $KEEPWEEKLY days!"
+            echo "Deleting the backups older than $KEEPWEEKLY days..."
+            find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
+      else
+            echo ""
+            echo "There were no weekly backups older than $KEEPWEEKLY days to delete."
+      fi
+
       ListBackups weekly
+      
       
       ## Make monthly backup
       echo ""
@@ -294,13 +311,28 @@ function WeeklyMonthlyBackups {
                   echo "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
                   pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
-                  find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
             fi 
       else
             echo "No monthly backups found so I am making the first one..."
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
+      
+      
+            ## Remove old monthly backups beyond $KEEPMONTHLY
+      echo ""
+      echo "Looking for backups older than $KEEPMONTHLY days..."
+
+      if [ "$(find $DIR -maxdepth 1 -name "*.monthly.img" -mtime +"$KEEPMONTHLY" | wc -l)" -ge "1" ]; then
+            echo ""
+            echo "Found backups older than $KEEPMONTHLY days!"
+            echo "Deleting the backups older than $KEEPMONTHLY days..."
+            find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
+      else
+            echo ""
+            echo "There were no monthly backups older than $KEEPMONTHLY days to delete."
+      fi
+      
       ListBackups monthly
 }
 
