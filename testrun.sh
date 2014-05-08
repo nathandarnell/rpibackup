@@ -301,7 +301,8 @@ function TestRun {
       touch "$OFILE"
       mv "$OFILE" "$OFILEFINAL"
       echo ""
-      echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
+      echo "RaspberryPI backup process completed!"
+      echo "The Backup file is: $OFILEFINAL"
       echo ""
       echo "The daily backups are:"
       ListBackups daily
@@ -333,17 +334,15 @@ function TestRun {
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+            echo "Deleting:"
+            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-            
             
             ListBackups daily
       else
-            echo "There were no backups older than $KEEPDAILY days to delete or more in number than $KEEPDAILY."
+            echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
       fi
       
-      
-      
-     
       WeeklyMonthlyBackups
       
       ListBackups
