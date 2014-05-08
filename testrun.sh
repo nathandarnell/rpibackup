@@ -9,7 +9,7 @@
 ##################################################################
 ## CONFIGURE
 ##################################################################
-SERVICES="  avahi-daemon 
+SERVICES="  avahi-daemon
             deluge-daemon 
             cron 
             bubbleupnpserver 
@@ -133,12 +133,15 @@ function DeclaredServices {
       for service in $SERVICES
       do
             echo "Stopping $service..."
-                        /etc/init.d/"$service" stop
-                  if (ps ax | grep -v grep | grep "$service" > /dev/null)
+            /etc/init.d/"$service" stop
+                  ## Try replacing ps grep with pgrep and see if it works...
+                  ##if (ps ax | grep -v grep | grep "$service" > /dev/null)
+                  ##
+                  if (pgrep -f "$service" > /dev/null)
                   then
                         echo "$service not stopped!"
                         break
-                  fi   
+                  fi
       done 
       ;;
 
