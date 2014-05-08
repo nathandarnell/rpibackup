@@ -42,7 +42,7 @@ function InitialSetup {
       clear
 
       ## Start the backup
-      echo -e "Starting RaspberryPi backup process!"
+      echo "Starting RaspberryPi backup process!"
       echo ""
 
       ## First check if pv package is installed, if not, install it first
@@ -50,11 +50,11 @@ function InitialSetup {
 
       if [[ $PACKAGESTATUS == S* ]]
       then
-            echo -e "Package 'pv' is installed"
+            echo "Package 'pv' is installed"
             echo ""
       else
-            echo -e "Package 'pv' is NOT installed"
-            echo -e "Installing package 'pv' + 'pv dialog'. Please wait..."
+            echo "Package 'pv' is NOT installed"
+            echo "Installing package 'pv' + 'pv dialog'. Please wait..."
             echo ""
             apt-get -y install pv
       fi
@@ -62,7 +62,7 @@ function InitialSetup {
       ## Check if backup directory exists
       if [ ! -d "$DIR" ];   
       then
-            echo -e "Backup directory $DIR doesn't exist, creating it now!"
+            echo "Backup directory $DIR doesn't exist, creating it now!"
             mkdir $DIR
       fi
 }
@@ -77,10 +77,10 @@ function ListBackups {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      echo -e "Last backups on HDD:"
+      echo "Last backups on HDD:"
       find $DIR -maxdepth 1 -name "*.img"
       echo ""
-      echo -e "Failed backups on HDD:"
+      echo "Failed backups on HDD:"
       find $DIR/ -maxdepth 1 -mindepth 1 ! -name "*.img"
       echo ""
 }
@@ -105,7 +105,7 @@ function CheckDiskSpace {
       SOURCEDISKSPACE=$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)
 
       # Disk capacity check
-      echo -e "Checking if there is enough diskspace for one more backup..."      
+      echo "Checking if there is enough diskspace for one more backup..."      
       if [ ${SOURCEDISKSPACE} -ge ${DESTDISKSPACE} ]; then
             echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
             exit 1
@@ -165,26 +165,26 @@ function WriteBackupToDisk {
       # First sync disks
       sync; sync
       echo ""
-      echo -e "Backing up SD card to .IMG file on HDD"
+      echo "Backing up SD card to .IMG file on HDD"
       ## Write the image to the drive
       SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
       pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
       mv "$OFILE" "$OFILEFINAL"
       echo ""
-      echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
-      echo -e "Looking for backups older than $KEEPDAILY days"
+      echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
+      echo "Looking for backups older than $KEEPDAILY days"
 ## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
-            echo -e "Removing backups older than $KEEPDAILY days"
+            echo "Removing backups older than $KEEPDAILY days"
             find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
             ListBackups
       else
-            echo -e "There were no backups older than $KEEPDAILY days to delete"
+            echo "There were no backups older than $KEEPDAILY days to delete"
       fi
       find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
 
-      echo -e "If any backups older than $KEEPDAILY days were found, they were deleted"
+      echo "If any backups older than $KEEPDAILY days were found, they were deleted"
       
       ## Make the weekly and monthly backups
       WeeklyMonthlyBackups
@@ -206,7 +206,7 @@ function WeeklyMonthlyBackups {
 
       echo "Checking for weekly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
-            echo -e "Weekly backups were found. Checking if a new one is needed..."
+            echo "Weekly backups were found. Checking if a new one is needed..."
 
 
 ## compare the weekly backups older than 7 days against the total weekly backups
@@ -226,26 +226,26 @@ function WeeklyMonthlyBackups {
                   find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
       else
-            echo -e "No weekly backups found so I am making the first one..."
+            echo "No weekly backups found so I am making the first one..."
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
       ## Make monthly backup
-      echo -e "Checking for monthly backups"
+      echo "Checking for monthly backups"
       if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
-           echo -e "Monthly backups were found. Checking if a new one is needed..."
+           echo "Monthly backups were found. Checking if a new one is needed..."
 
             if [ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]
             then
-                  echo -e "None are older than 30 days" 
+                  echo "None are older than 30 days" 
             else
-                  echo -e "Need a new monthly backup.  Making it now..."
+                  echo "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
                   pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
                   find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
             fi 
       else
-            echo -e "No monthly backups found so I am making the first one..."
+            echo "No monthly backups found so I am making the first one..."
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
@@ -260,11 +260,11 @@ function TestRun {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      echo -e "Doing a test run of backing up SD card to .IMG file on HDD..."
+      echo "Doing a test run of backing up SD card to .IMG file on HDD..."
       touch "$OFILE"
       mv "$OFILE" "$OFILEFINAL"
       echo ""
-      echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
+      echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo ""
       echo "The daily backups are:"
       DAILYBACKUPNAMES=$(find $DIR -maxdepth 1 -name "*.daily.img")
