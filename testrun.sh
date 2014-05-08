@@ -56,14 +56,14 @@ function InitialSetup {
             echo -e "Package 'pv' is NOT installed"
             echo -e "Installing package 'pv' + 'pv dialog'. Please wait..."
             echo ""
-            sudo apt-get -y install pv
+            apt-get -y install pv
       fi
 
       ## Check if backup directory exists
       if [ ! -d "$DIR" ];   
       then
             echo -e "Backup directory $DIR doesn't exist, creating it now!"
-            sudo mkdir $DIR
+            mkdir $DIR
       fi
 }
 
@@ -78,10 +78,10 @@ function ListBackups {
       echo "$FUNCNAME"
       echo ""
       echo -e "Last backups on HDD:"
-      sudo find $DIR -maxdepth 1 -name "*.img"
+      find $DIR -maxdepth 1 -name "*.img"
       echo ""
       echo -e "Failed backups on HDD:"
-      sudo find $DIR/ -maxdepth 1 -mindepth 1 ! -name "*.img"
+      find $DIR/ -maxdepth 1 -mindepth 1 ! -name "*.img"
       echo ""
 }
 
@@ -133,7 +133,7 @@ function DeclaredServices {
       for service in $SERVICES
       do
             echo "Stopping $service..."
-            sudo /etc/init.d/"$service" stop
+                        /etc/init.d/"$service" stop
                   if (ps ax | grep -v grep | grep "$service" > /dev/null)
                   then
                         echo "$service not stopped!"
@@ -147,7 +147,7 @@ function DeclaredServices {
             for service in $SERVICES
             do
                   echo "Starting $service..."
-                  sudo /etc/init.d/"$service" start
+                  /etc/init.d/"$service" start
             done 
       ;;
       esac
@@ -167,22 +167,22 @@ function WriteBackupToDisk {
       echo ""
       echo -e "Backing up SD card to .IMG file on HDD"
       ## Write the image to the drive
-      SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
-      sudo pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
+      SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
+      pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
-      sudo mv "$OFILE" "$OFILEFINAL"
+      mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo -e "Looking for backups older than $KEEPDAILY days"
 ## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
             echo -e "Removing backups older than $KEEPDAILY days"
-            sudo find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
+            find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
             ListBackups
       else
             echo -e "There were no backups older than $KEEPDAILY days to delete"
       fi
-      sudo find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
+      find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
 
       echo -e "If any backups older than $KEEPDAILY days were found, they were deleted"
       
@@ -222,13 +222,13 @@ function WeeklyMonthlyBackups {
             else
                   echo "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
-                  sudo pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
-                  sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
+                  pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
+                  find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
       else
             echo -e "No weekly backups found so I am making the first one..."
             CheckDiskSpace
-            sudo pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
+            pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
       ## Make monthly backup
       echo -e "Checking for monthly backups"
@@ -241,13 +241,13 @@ function WeeklyMonthlyBackups {
             else
                   echo -e "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
-                  sudo pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
-                  sudo find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
+                  pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
+                  find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
             fi 
       else
             echo -e "No monthly backups found so I am making the first one..."
             CheckDiskSpace
-            sudo pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
+            pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
 }
 
@@ -262,7 +262,7 @@ function TestRun {
       echo ""
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD..."
       touch "$OFILE"
-      sudo mv "$OFILE" "$OFILEFINAL"
+      mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo ""
@@ -311,7 +311,7 @@ function TestRun {
       ## Delete the empty files that were made
       if [ $TESTRUNPERM == 0 ]; then
             echo "Cleaning up after myself by deleting the files that were just made"
-            sudo rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
+            rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
       fi
 }
 
