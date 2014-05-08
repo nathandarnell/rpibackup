@@ -215,34 +215,64 @@ function WriteBackupToDisk {
       echo ""
       echo "$FUNCNAME"
       echo ""
+      
       # First sync disks
       sync; sync
       echo ""
       echo "Backing up SD card to .IMG file on HDD"
+      
       ## Write the image to the drive
       SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
       pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
-      mv "$OFILE" "$OFILEFINAL"
+      mv "$OFILE" "$OFILEFINAL"  
       echo ""
-      echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
-      echo "Looking for backups older than $KEEPDAILY days"
-## TODO: make this IF statement actually go after files older than 7 days as well as more than 7 in number
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -ge "$KEEPDAILY" ]; then
-            echo "Removing backups older than $KEEPDAILY days"
-            find $DIR -maxdepth 1 -name "*.daily.img" -exec rm {} \;
-            ListBackups
-      else
-            echo "There were no backups older than $KEEPDAILY days to delete"
-      fi
-      find $DIR -maxdepth 1 -name "*.daily.img" -mtime +$KEEPDAILY -exec ls {} \; ## Is there a problem with using "ls" here?
+      echo "RaspberryPI backup process completed!"
+      echo "The Backup file is: $OFILEFINAL"
+      echo ""
+      echo "The daily backups are:"
+      ListBackups daily
+      
+      ## Remove old daily backups beyond $KEEPDAILY
+      echo ""
+      echo "Looking for backups older than $KEEPDAILY days..."
 
-      echo "If any backups older than $KEEPDAILY days were found, they were deleted"
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]; then
+            echo ""
+            echo "Found backups older than $KEEPDAILY days!"
+            echo "Deleting the backups older than $KEEPDAILY days..."
+            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
+            ListBackups daily
+      else
+            echo ""
+            echo "There were no backups older than $KEEPDAILY days to delete."
+      fi
+      
+      ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
+      echo ""
+      echo "Looking for more daily backups than $KEEPDAILY..."
+      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]
+      then
+            echo ""
+            echo "There are more than $KEEPDAILY daily backups!"
+            echo ""
+            echo "Removing backups so there are only $KEEPDAILY daily backups..."
+            
+            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+            echo ""
+            echo "Deleting:"
+            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
+            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
+            
+            ListBackups daily
+      else
+            echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
+      fi
       
       ## Make the weekly and monthly backups
       WeeklyMonthlyBackups
       
-      ListBackups
+      ListBackups all
 }
 
 
@@ -287,7 +317,10 @@ function WeeklyMonthlyBackups {
             echo ""
             echo "Found backups older than $KEEPWEEKLY days!"
             echo "Deleting the backups older than $KEEPWEEKLY days..."
+            echo "Deleting:"
+            find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY
             find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
+            
       else
             echo ""
             echo "There were no weekly backups older than $KEEPWEEKLY days to delete."
@@ -327,6 +360,8 @@ function WeeklyMonthlyBackups {
             echo ""
             echo "Found backups older than $KEEPMONTHLY days!"
             echo "Deleting the backups older than $KEEPMONTHLY days..."
+            echo "Deleting:"
+            find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY
             find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
       else
             echo ""
