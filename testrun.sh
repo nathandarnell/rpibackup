@@ -111,6 +111,23 @@ function ListBackups {
             echo ""
             find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
       ;;
+      all)
+            echo ""
+            echo "The Daily backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*daily.img' | sort
+            echo ""
+            echo "The Weekly backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
+            echo ""
+            echo "The Monthly backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
+            echo "The Failed backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
+      ;;
       esac
 }
 
@@ -348,7 +365,7 @@ function TestRun {
       
       WeeklyMonthlyBackups
       
-      ListBackups
+      ListBackups all
 
       ## Delete the empty files that were made
       if [ $TESTRUNPERM == 0 ]; then
