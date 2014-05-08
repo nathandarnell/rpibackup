@@ -132,16 +132,20 @@ function DeclaredServices {
       ## Quit the declared services
       for service in $SERVICES
       do
-            echo "Stopping $service..."
-            /etc/init.d/"$service" stop
-                  ## Try replacing ps grep with pgrep and see if it works...
+            if (pgrep -f "$service" > /dev/null)
+                  then
+                        echo "Stopping $service..."
+                        /etc/init.d/"$service" stop
+                  ## Try replacing ps grep with pgrep and see if it works...  Old IF is below...
                   ##if (ps ax | grep -v grep | grep "$service" > /dev/null)
                   ##
-                  if (pgrep -f "$service" > /dev/null)
-                  then
-                        echo "$service not stopped!"
-                        break
+                        if (pgrep -f "$service" > /dev/null)
+                        then
+                                    echo "$service not stopped!"
+                                    break
+                        fi
                   fi
+
       done 
       ;;
 
