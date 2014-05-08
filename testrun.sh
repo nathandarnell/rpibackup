@@ -264,6 +264,8 @@ function WeeklyMonthlyBackups {
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
+      ListBackups weekly
+      
       ## Make monthly backup
       echo "Checking for monthly backups..."
       if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
@@ -285,6 +287,7 @@ function WeeklyMonthlyBackups {
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
+      ListBackups monthly
 }
 
 
