@@ -4,18 +4,27 @@
 ## From http://ubuntuforums.org/showthread.php?t=928475
 ## Also includes some code from various other sources
 ## Changed by Nathan Darnell
-## Adapted by me to work on my RPi systems and be more flexible
+## Adapted by me to work on my RPi systems and be more flexible (I hope!)
 
 ##################################################################
 ## CONFIGURE
 ##################################################################
-SERVICES="avahi-daemon deluge-daemon cron bubbleupnpserver fail2ban minidlna nginx nullmailer monitorix"    ## Declare what services to stop and start
+SERVICES="  avahi-daemon 
+            deluge-daemon 
+            cron 
+            bubbleupnpserver 
+            fail2ban 
+            minidlna 
+            nginx 
+            nullmailer 
+            monitorix"        ## Declare what services to stop and start
 SUBDIR=RaspberryPi2_backups   ## Setting up backup directories
-DIR=/media/1TB/$SUBDIR  ## Change to where you want the backups to be stored
-KEEPDAILY=7       ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
-KEEPWEEKLY=28     ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
-KEEPMONTHLY=90    ## So does this (3 months = 90 days = 3 monthly backups kept)
-TESTRUN=1         ## Set this to "0" if you want to write to the disk.  CHange it to do a test run to just use "TOUCH" and clean up after itself.
+DIR=/media/1TB/$SUBDIR        ## Change to where you want the backups to be stored
+KEEPDAILY=7                   ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
+KEEPWEEKLY=28                 ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
+KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly backups kept)
+TESTRUN=1                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
+TESTRUNPERM=1                 ## Set this to "0" if you don't want to leave the TestRun files on the disk, but delete them (Leaving the files can be useful for testing the weekly and monthly backups)
 ##################################################################
 ## /CONFIGURE
 ##################################################################
@@ -124,8 +133,8 @@ function DeclaredServices {
       for service in $SERVICES
       do
             echo "Stopping $service..."
-            sudo /etc/init.d/$service stop
-                  if (ps ax | grep -v grep | grep $service > /dev/null)
+            sudo /etc/init.d/"$service" stop
+                  if (ps ax | grep -v grep | grep "$service" > /dev/null)
                   then
                         echo "$service not stopped!"
                         break
@@ -138,7 +147,7 @@ function DeclaredServices {
             for service in $SERVICES
             do
                   echo "Starting $service..."
-                  sudo /etc/init.d/$service start
+                  sudo /etc/init.d/"$service" start
             done 
       ;;
       esac
@@ -150,16 +159,18 @@ function DeclaredServices {
 ## Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
 ##################################################################
 function WriteBackupToDisk {
+      echo ""
       echo "$FUNCNAME"
+      echo ""
       # First sync disks
       sync; sync
       echo ""
       echo -e "Backing up SD card to .IMG file on HDD"
       ## Write the image to the drive
       SDSIZE=$(sudo blockdev --getsize64 /dev/mmcblk0);
-      sudo pv -tpreb /dev/mmcblk0 -s $SDSIZE | dd of=$OFILE bs=1M conv=sync,noerror iflag=fullblock
+      sudo pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
-      sudo mv $OFILE $OFILEFINAL
+      sudo mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo -e "Looking for backups older than $KEEPDAILY days"
@@ -211,13 +222,13 @@ function WeeklyMonthlyBackups {
             else
                   echo "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
-                  sudo pv $OFILEFINAL > $OFILEFINALWEEKLY	## pv gives the user some feedback
+                  sudo pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
                   sudo find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;	## Remove any weekly backups that are too old
             fi
       else
             echo -e "No weekly backups found so I am making the first one..."
             CheckDiskSpace
-            sudo pv $OFILEFINAL > $OFILEFINALWEEKLY
+            sudo pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
       ## Make monthly backup
       echo -e "Checking for monthly backups"
@@ -230,13 +241,13 @@ function WeeklyMonthlyBackups {
             else
                   echo -e "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
-                  sudo pv $OFILEFINAL > $OFILEFINALMONTHLY  ## pv gives the user some feedback
+                  sudo pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
                   sudo find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
             fi 
       else
             echo -e "No monthly backups found so I am making the first one..."
             CheckDiskSpace
-            sudo pv $OFILEFINAL > $OFILEFINALMONTHLY
+            sudo pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
 }
 
@@ -250,8 +261,8 @@ function TestRun {
       echo "$FUNCNAME"
       echo ""
       echo -e "Doing a test run of backing up SD card to .IMG file on HDD..."
-      touch $OFILE 
-      sudo mv $OFILE $OFILEFINAL
+      touch "$OFILE"
+      sudo mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo -e "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo ""
@@ -296,10 +307,12 @@ function TestRun {
       WeeklyMonthlyBackups
       
       ListBackups
-      
-      echo "Cleaning up after myself by deleting the files that were just made"
-      
-##      sudo rm -f $OFILE $OFILEFINAL $OFILEFINALWEEKLY $OFILEFINALMONTHLY
+
+      ## Delete the empty files that were made
+      if [ $TESTRUNPERM == 0 ]; then
+            echo "Cleaning up after myself by deleting the files that were just made"
+            sudo rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
+      fi
 }
 
 InitialSetup
