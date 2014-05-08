@@ -126,21 +126,21 @@ function CheckDiskSpace {
       ## No need to check diskspace if we're not writing real files!
       if [ "$TESTRUN" == "0" ]
       then
-      # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
-      # awk grabs the fourth column (Free), and cut removes the trailing G.
-      DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
-      # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
-      # awk grabs the second column (Size), and cut removes the trailing G.
-      SOURCEDISKSPACE=$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)
+            # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
+            # awk grabs the fourth column (Free), and cut removes the trailing G.
+            DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
+            # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
+            # awk grabs the second column (Size), and cut removes the trailing G.
+            SOURCEDISKSPACE=$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)
 
-      # Disk capacity check
-      echo "Checking if there is enough diskspace for one more backup..."      
-      if [ ${SOURCEDISKSPACE} -ge ${DESTDISKSPACE} ]; then
-            echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
-            exit 1
+            # Disk capacity check
+            echo "Checking if there is enough diskspace for one more backup..."      
+            if [ ${SOURCEDISKSPACE} -ge ${DESTDISKSPACE} ]; then
+                        echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
+                        exit 1
             else
-            echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
-      fi
+                        echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
+            fi
       else
             echo "Not going to check diskspace since we're only TOUCHing files here..."
       fi
@@ -238,27 +238,21 @@ function WriteBackupToDisk {
 ## Make weekly and monthly backups
 ##################################################################
 function WeeklyMonthlyBackups {
-      WEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img')
-      OLDWEEKLYBACKUPNAMES=$(find $DIR -maxdepth 1 -name '*weekly.img' -mtime +7)
       echo ""      
       echo "$FUNCNAME"
       echo ""
 
-      echo "Checking for weekly backups"
+      echo "Checking for weekly backups..."
       if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
+            echo ""
             echo "Weekly backups were found. Checking if a new one is needed..."
 
 
 ## compare the weekly backups older than 7 days against the total weekly backups
             if [ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]
             then
+                  echo ""
                   echo "None are older than 7 days" 
-                  
-                  echo "MY BEST BET AT WEEKLY BACKUP NAMES" 
-                  echo "$WEEKLYBACKUPNAMES" 
-                   
-                  echo "MY BEST BET AT old WEEKLY BACKUP NAMES" 
-                  echo "$OLDWEEKLYBACKUPNAMES" 
             else
                   echo "Need a new weekly backup.  Making it now..."
                   CheckDiskSpace
@@ -271,13 +265,15 @@ function WeeklyMonthlyBackups {
             pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
       fi
       ## Make monthly backup
-      echo "Checking for monthly backups"
+      echo "Checking for monthly backups..."
       if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
+            echo ""
            echo "Monthly backups were found. Checking if a new one is needed..."
 
             if [ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]
             then
-                  echo "None are older than 30 days" 
+                        echo ""
+                  echo "None are older than 30 days.  Not making a new one." 
             else
                   echo "Need a new monthly backup.  Making it now..."
                   CheckDiskSpace
@@ -301,13 +297,14 @@ function TestRun {
       echo "$FUNCNAME"
       echo ""
       echo "Doing a test run of backing up SD card to .IMG file on HDD..."
+      CheckDiskSpace
       touch "$OFILE"
       mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo "RaspberryPI backup process completed! The Backup file is: $OFILEFINAL"
       echo ""
       echo "The daily backups are:"
-      find $DIR -maxdepth 1 -name "*.daily.img"
+      ListBackups daily
       
       
       ## Remove old daily backups beyond $KEEPDAILY
@@ -315,12 +312,14 @@ function TestRun {
       echo "Looking for backups older than $KEEPDAILY days..."
 
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]; then
-            echo "Removing backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec echo Removing old backups: {} \; -exec rm {} \;
-            ListBackups
+            echo ""
+            echo "Found backups older than $KEEPDAILY days!"
+            echo "Deleting the backups older than $KEEPDAILY days..."
+            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
+            ListBackups daily
       else
             echo ""
-            echo "There were no backups older than $KEEPDAILY days to delete"
+            echo "There were no backups older than $KEEPDAILY days to delete."
       fi
       
       
@@ -329,15 +328,17 @@ function TestRun {
       echo "Looking for more daily backups than $KEEPDAILY..."
 
       if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
+            echo ""
+            echo "There are more than $KEEPDAILY daily backups!"
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
             
             
-            ListBackups
+            ListBackups daily
       else
-            echo "There were no backups older than $KEEPDAILY days to delete or more in number than $KEEPDAILY"
+            echo "There were no backups older than $KEEPDAILY days to delete or more in number than $KEEPDAILY."
       fi
       
       
@@ -349,6 +350,7 @@ function TestRun {
 
       ## Delete the empty files that were made
       if [ $TESTRUNPERM == 0 ]; then
+            echo ""
             echo "Cleaning up after myself by deleting the files that were just made"
             rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
       fi
