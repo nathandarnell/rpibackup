@@ -17,7 +17,8 @@ SERVICES="  avahi-daemon
             minidlna 
             nginx 
             nullmailer 
-            monitorix"        ## Declare what services to stop and start
+            monitorix"        ## Declare what services to stop and start 
+SERVICESDIR=/etc/init.d             ## Point to where all the services are located to look for them and start and stop them.  May be another location that works better for this...
 SUBDIR=RaspberryPi2_backups   ## Setting up backup directories
 DIR=/media/1TB/$SUBDIR        ## Change to where you want the backups to be stored
 KEEPDAILY=7                   ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
@@ -132,7 +133,7 @@ function DeclaredServices {
       ## Quit the declared services
       for service in $SERVICES
       do
-            if (pgrep -f "$service" > /dev/null)
+            if [ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ];
                   then
                         echo "Stopping $service..."
                         /etc/init.d/"$service" stop
