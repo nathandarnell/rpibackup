@@ -37,8 +37,8 @@ case "$1" in
         Run
       ;;
       a)
-            s
-            r
+        Synch "$@"
+        Run
       ;;
       *)
         Error
