@@ -66,6 +66,41 @@ function MakeIncrementalBackup {
 }
 
 function RestoreIncrementalBackup {
+            
+            
+            function RestoreMenu {
+    echo "1. Number1"
+    echo "2. Number2"
+    echo "3. Number3"
+    echo "4. All"
+    echo "5. Quit"
+}
+
+while true ; do
+    RestoreMenu
+    read choices
+    for choice in $choices ; do
+	case "$choice" in
+	    1)
+		echo "Number One" ;;
+	    2)
+		echo "Number Two" ;;
+	    3)
+		echo "Number Three" ;;
+	    4)
+		echo "Numbers One, two, three" ;;
+	    5)
+		echo "Exit"
+		exit 0 ;;
+	    *)
+		echo "Please enter number ONLY ranging from 1-5!"
+		;;
+	esac
+    done
+done
+            
+            
+            
     xdelta3 -d -v -s backup_20140508_152105.daily.img patch0837 remadebackup_20140508_222319.daily.img
 
 }
