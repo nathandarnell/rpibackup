@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 ## Saves me a few keystrokes
 function Synch {
             echo "Synching with GitHub..."
