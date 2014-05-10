@@ -45,9 +45,9 @@ OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename
 function MakeIncrementalBackup {
     if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
         ## Check if there is a weekly backup to use as the base for the delta file
-        if [[ -s "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]]; then
+        if [[ -s "$(find "$DIR" -maxdepth 1 -name '*weekly.img')" ]]; then
             ## Base the delta on the most resent weekly backup
-            DELTAORIG="$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
+            DELTAORIG="$(find "$DIR" -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
         else
             echo "There are no weekly backups to base the delta on.  Something must have gone wrong..."
             return
@@ -64,39 +64,36 @@ function MakeIncrementalBackup {
 
 }
 
-function RestoreIncrementalBackup {
-            
-            
-            function RestoreMenu {
-    echo "1. Number1"
-    echo "2. Number2"
-    echo "3. Number3"
-    echo "4. All"
-    echo "5. Quit"
-}
 
-while true ; do
-    RestoreMenu
-    read choices
-    for choice in $choices ; do
-	case "$choice" in
-	    1)
-		echo "Number One" ;;
-	    2)
-		echo "Number Two" ;;
-	    3)
-		echo "Number Three" ;;
-	    4)
-		echo "Numbers One, two, three" ;;
-	    5)
-		echo "Exit"
-		exit 0 ;;
-	    *)
-		echo "Please enter number ONLY ranging from 1-5!"
-		;;
-	esac
-    done
+## Adapted from: http://stackoverflow.com/a/15808052
+function RestoreIncrementalBackup {
+	PATCHFILES=($(find "$DIR" -maxdepth 1 -type f -name '*.patch'))
+
+	PROMPT="Please select a file:"
+
+	PS3="$PROMPT"
+select patchfile in "${PATCHFILES[@]}" "Quit" ; do 
+    if (( REPLY == 1 + ${#PATCHFILES[@]} )) ; then
+        exit
+
+    elif (( REPLY > 0 && REPLY <= ${#PATCHFILES[@]} )) ; then
+        echo  "You picked $patchfile which is file $REPLY"
+        ##                   ^                        ^
+        ## The selected patchfile      The selected option
+        break
+
+    else
+        echo "Invalid option. Try another one."
+    fi
 done
+
+## Reads patchfiles in the dir and prints them out
+	for patchfile in ${PATCHFILES[*]}
+	do
+	  printf "   %s\n" $patchfile
+	done
+
+
             
             
             
