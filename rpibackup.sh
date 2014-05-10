@@ -43,10 +43,10 @@ OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename
 ##################################################################
 
 function MakeIncrementalBackup {
-    if [ ! $INCREMENTALBACKUPS == 0 ]
+    if [[ ! $INCREMENTALBACKUPS == 0 ]]
     then
         ## Check if there is a weekly backup to use as the base for the delta file
-        if [ -s "$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)" ]
+        if [[ -s "$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)" ]]
         then
             ## Base the delta on the most resent weekly backup
             DELTAORIG="$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
@@ -131,8 +131,7 @@ function InitialSetup {
       fi
 
       ## Check if backup directory exists
-      if [ ! -d "$DIR" ];   
-      then
+      if [[ ! -d "$DIR" ]]; then
             echo "Backup directory $DIR doesn't exist, creating it now!"
             mkdir $DIR
       fi
@@ -207,8 +206,7 @@ function CheckDiskSpace {
       echo "$FUNCNAME"
       echo ""
       ## No need to check diskspace if we're not writing real files!
-      if [ "$TESTRUN" == "0" ]
-      then
+      if [[ "$TESTRUN" == "0" ]]; then
             # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
             # awk grabs the fourth column (Free), and cut removes the trailing G.
             DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
@@ -218,7 +216,7 @@ function CheckDiskSpace {
 
             # Disk capacity check
             echo "Checking if there is enough diskspace for one more backup..."      
-            if [ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]; then
+            if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
                         echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
                         exit 1
             else
@@ -244,8 +242,7 @@ function DeclaredServices {
       ## Quit the declared services
       for service in $SERVICES
       do
-            if [ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ];
-                  then
+            if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
                         echo "Stopping $service..."
                         /etc/init.d/"$service" stop
                   ## Try replacing ps grep with pgrep and see if it works...  Old IF is below...
@@ -266,8 +263,7 @@ function DeclaredServices {
             for service in $SERVICES
             do
             
-                        if [ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ];
-                        then
+                        if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
                                     echo "Starting $service..."
                                     /etc/init.d/"$service" start
                         fi
@@ -306,7 +302,7 @@ function WriteBackupToDisk {
       echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
             echo ""
             echo "Found backups older than $KEEPDAILY days!"
             echo "Deleting the backups older than $KEEPDAILY days..."
@@ -320,8 +316,7 @@ function WriteBackupToDisk {
       ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]
-      then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
             echo ""
             echo "There are more than $KEEPDAILY daily backups!"
             echo ""
@@ -356,14 +351,13 @@ function WeeklyMonthlyBackups {
 
 
       echo "Checking for weekly backups..."
-      if [ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]; then 
+      if [[ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]]; then 
             echo ""
             echo "Weekly backups were found. Checking if a new one is needed..."
 
 
 ## compare the weekly backups older than 7 days against the total weekly backups
-            if [ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]
-            then
+            if [[ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]]; then
                   echo ""
                   echo "None are older than 7 days" 
             else
@@ -382,7 +376,7 @@ function WeeklyMonthlyBackups {
       echo ""
       echo "Looking for backups older than $KEEPWEEKLY days..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.weekly.img" -mtime +"$KEEPWEEKLY" | wc -l)" -ge "1" ]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.weekly.img" -mtime +"$KEEPWEEKLY" | wc -l)" -ge "1" ]]; then
             echo ""
             echo "Found backups older than $KEEPWEEKLY days!"
             echo "Deleting the backups older than $KEEPWEEKLY days..."
@@ -401,12 +395,11 @@ function WeeklyMonthlyBackups {
       ## Make monthly backup
       echo ""
       echo "Checking for monthly backups..."
-      if [ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]; then 
+      if [[ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]]; then 
             echo ""
            echo "Monthly backups were found. Checking if a new one is needed..."
 
-            if [ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]
-            then
+            if [[ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]]; then
                         echo ""
                   echo "None are older than 30 days.  Not making a new one." 
             else
@@ -425,7 +418,7 @@ function WeeklyMonthlyBackups {
       echo ""
       echo "Looking for backups older than $KEEPMONTHLY days..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.monthly.img" -mtime +"$KEEPMONTHLY" | wc -l)" -ge "1" ]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.monthly.img" -mtime +"$KEEPMONTHLY" | wc -l)" -ge "1" ]]; then
             echo ""
             echo "Found backups older than $KEEPMONTHLY days!"
             echo "Deleting the backups older than $KEEPMONTHLY days..."
@@ -465,7 +458,7 @@ function TestRun {
       echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
             echo ""
             echo "Found backups older than $KEEPDAILY days!"
             echo "Deleting the backups older than $KEEPDAILY days..."
@@ -481,7 +474,7 @@ function TestRun {
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
 
-      if [ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
             echo ""
             echo "There are more than $KEEPDAILY daily backups!"
             echo ""
@@ -503,7 +496,7 @@ function TestRun {
       ListBackups all
 
       ## Delete the empty files that were made
-      if [ $TESTRUNPERM == 0 ]; then
+      if [[ $TESTRUNPERM == 0 ]]; then
             echo ""
             echo "Cleaning up after myself by deleting the files that were just made"
             rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
@@ -515,7 +508,7 @@ InitialSetup
 DeclaredServices stop
 
 ## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
-if [ $TESTRUN == 0 ] 
+if [[ $TESTRUN == 0 ]] 
 then
       WriteBackupToDisk
 else
