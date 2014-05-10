@@ -29,18 +29,9 @@ function Error {
         fi
 
 case "$1" in
-      s)
-        Synch "$@"
-      ;;
-      r)
-        Run
-      ;;
-      a)
-        Synch "$@"
-        Run
-      ;;
-      *)
-        Error
-      ;;
+      s) Synch "$@" ;;
+      r) Run ;;
+      a) Synch "$@" Run ;;
+      *) Error ;;
 esac
 
