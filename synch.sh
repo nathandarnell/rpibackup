@@ -12,7 +12,6 @@ function Run {
             echo "Running the backup..."
             echo ""
             ./rpibackup.sh
-            find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
   }
 
 function Error {
