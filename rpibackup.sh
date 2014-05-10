@@ -26,7 +26,7 @@ KEEPWEEKLY=28                 ## As of now, this needs to be in days (4 weeks = 
 KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly backups kept)
 TESTRUN=0                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
 TESTRUNPERM=1                 ## Set this to "0" if you don't want to leave the TestRun files on the disk, but delete them (Leaving the files can be useful for testing the weekly and monthly backups)
-INCREMENTALBACKUPS=0          ## Set this to 0 if you want to disable incremental backups or make it 1 to enable them
+INCREMENTALBACKUPS=1          ## Set this to 0 if you want to disable incremental backups or make it 1 to enable them
 ##################################################################
 ## /CONFIGURE
 ##################################################################
@@ -43,11 +43,9 @@ OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename
 ##################################################################
 
 function MakeIncrementalBackup {
-    if [[ ! $INCREMENTALBACKUPS == 0 ]]
-    then
+    if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
         ## Check if there is a weekly backup to use as the base for the delta file
-        if [[ -s "$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)" ]]
-        then
+        if [[ -s "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]]; then
             ## Base the delta on the most resent weekly backup
             DELTAORIG="$(find $DIR -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
         else
@@ -55,10 +53,11 @@ function MakeIncrementalBackup {
             return
         fi
         ## Make a delta of the daily backup using the weekly backup (??) as the original
-        xdelta3 -e -s $DELTAORIG $OFILEFINAL $OFILEFINAL.patch
+        ## Whatever weekly backup is the most recent, that is what all the daily incrementals are going to be based on
+        xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
         
         ## Now that the delta has been made, delete the fullsize daily backup
-        rm -f $OFILEFINAL
+        rm -f "$OFILEFINAL"
     else
         return
     fi
@@ -202,29 +201,29 @@ function ListBackups {
 ## Borrowed and adapted from http://hustoknow.blogspot.com/2011/01/bash-script-to-check-disk-space.html
 ##################################################################
 function CheckDiskSpace {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
-      ## No need to check diskspace if we're not writing real files!
-      if [[ "$TESTRUN" == "0" ]]; then
-            # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
-            # awk grabs the fourth column (Free), and cut removes the trailing G.
-            DESTDISKSPACE=$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)
-            # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
-            # awk grabs the second column (Size), and cut removes the trailing G.
-            SOURCEDISKSPACE=$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)
+  echo ""
+  echo "$FUNCNAME"
+  echo ""
+  ## No need to check diskspace if we're not writing real files!
+  if [[ "$TESTRUN" == 0 ]]; then
+    # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
+    # awk grabs the fourth column (Free), and cut removes the trailing G.
+    DESTDISKSPACE="$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)"
+    # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
+    # awk grabs the second column (Size), and cut removes the trailing G.
+    SOURCEDISKSPACE="$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)"
 
-            # Disk capacity check
-            echo "Checking if there is enough diskspace for one more backup..."      
-            if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
-                        echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
-                        exit 1
-            else
-                        echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
-            fi
-      else
-            echo "Not going to check diskspace since we're only TOUCHing files here..."
-      fi
+    # Disk capacity check
+    echo "Checking if there is enough diskspace for one more backup..."      
+    if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
+      echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
+      exit 1
+    else
+      echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
+    fi
+  else
+    echo "Not going to check diskspace since we're only TOUCHing files here..."
+  fi
 }
 
 
@@ -510,9 +509,10 @@ DeclaredServices stop
 ## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
 if [[ $TESTRUN == 0 ]] 
 then
-      WriteBackupToDisk
+  WriteBackupToDisk
+  MakeIncrementalBackup
 else
-      TestRun
+  TestRun
 fi
 
 DeclaredServices start
