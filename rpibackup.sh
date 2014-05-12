@@ -520,18 +520,18 @@ if [[ ! -z "$1" ]]; then
 	while getopts $FLAGS FLAG
 	do
     		case $FLAG in
-        	r  )    ARGUMENT=$OPTARG
+        	r  )
         		## Check if the command line includes a patchfile to 
         		## use and pass it to the RestoreBackup function
-        		if [[ ! -z "$ARGUMENT" ]]; then
+        		if [[ ! -z "$OPTARG" ]]; then
         			#RestoreBackup "$ARGUMENT"
-        			echo "RestoreBackup $ARGUMENT"
+        			echo "RestoreBackup $OPTARG"
         		else
         			#RestoreBackup
         			echo "RestoreBackup"
         		fi
         	;;
-        	*  )    echo "Missing a valid argument. /nQuitting."
+        	*  )    echo "Missing a valid argument. \nQuitting."
         	;;
     		esac
 	done
