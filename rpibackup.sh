@@ -540,6 +540,10 @@ function TestRun {
       fi
 }
 
+## Begin the program and keep track of how many seconds it takes...
+## From http://stackoverflow.com/questions/16908084/linux-bash-script-to-calculate-time-elapsed
+STARTTIME=$(date +%s)
+
 InitialSetup
 
 DeclaredServices stop
@@ -555,3 +559,7 @@ else
 fi
 
 DeclaredServices start
+
+##Figure out how many seconds the backup took...
+ENDTIME=$(date +%s)
+echo "It took $(($ENDTIME - $STARTTIME)) seconds to complete this backup!"
