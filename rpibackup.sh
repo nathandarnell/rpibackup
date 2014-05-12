@@ -50,14 +50,54 @@ function MakeIncrementalBackup {
             DELTAORIG="$(find "$DIR" -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
         else
             echo "There are no weekly backups to base the delta on.  Something must have gone wrong..."
-            return
+            return 1 ## I think this means there was an error??
         fi
+        
         ## Make a delta of the daily backup using the weekly backup (??) as the original
         ## Whatever weekly backup is the most recent, that is what all the daily incrementals are going to be based on
         xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
-        
+
         ## Now that the delta has been made, delete the fullsize daily backup
         rm -f "$OFILEFINAL"
+        
+        
+        
+        
+	## Remove old patch/delta backups beyond $KEEPDAILY
+      echo ""
+      echo "Looking for delta backups older than $KEEPDAILY days..."
+
+      if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
+            echo ""
+            echo "Found delta backups older than $KEEPDAILY days!"
+            echo "Deleting the delta backups older than $KEEPDAILY days..."
+            find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" -exec rm {} \;
+            ListBackups patch
+      else
+            echo ""
+            echo "There were no delta backups older than $KEEPDAILY days to delete."
+      fi
+
+      ## Remove delta backups if there are more than $KEEPDAILY in the $DIR
+      echo ""
+      echo "Looking for more daily backups than $KEEPDAILY..."
+      if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" | wc -l)" -gt "$KEEPDAILY" ]]; then
+            echo ""
+            echo "There are more than $KEEPDAILY delta backups!"
+            echo ""
+            echo "Removing backups so there are only $KEEPDAILY delta backups..."
+            
+            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+            echo ""
+            echo "Deleting:"
+            find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
+            find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
+
+            ListBackups patch
+      else
+            echo "There were no delta backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
+      fi
+
     else
         return
     fi
@@ -94,9 +134,6 @@ done
 	done
 
 
-            
-            
-            
     xdelta3 -d -v -s backup_20140508_152105.daily.img patch0837 remadebackup_20140508_222319.daily.img
 
 }
@@ -121,12 +158,14 @@ function InitialSetup {
             echo ""
       else
             echo "Package 'pv' is NOT installed"
-            echo "Installing package 'pv' + 'pv dialog'. Please wait..."
+            echo "Installing package 'pv'. Please wait..."
             echo ""
             apt-get -y install pv
       fi
 
       ## Check if backup directory exists
+      echo ""
+      echo "Checking for the backup directory $DIR..."
       if [[ ! -d "$DIR" ]]; then
             echo "Backup directory $DIR doesn't exist, creating it now!"
             mkdir $DIR
@@ -136,22 +175,21 @@ function InitialSetup {
 
 
 ##################################################################
-##List all the files with ".img" in $DIR
-##Then list all files without ".img"
+## List all the files with ".img" in $DIR
+## Lists all the files with "img.patch in $DIR
+## Then list all files without ".img"
 ##################################################################
 function ListBackups {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      
+
+      LISTBACKUPINPUT=$1
             if [[ $# -eq 0 ]] ; then
-                        ListBackups daily
-                        ListBackups weekly
-                        ListBackups monthly
-                        ListBackups failed
+                        LISTBACKUPINPUT=all
             fi
-      
-      case "$1" in
+
+      case "$LISTBACKUPINPUT" in
       daily)
             echo "The Daily backups are:"
             echo ""
@@ -167,16 +205,24 @@ function ListBackups {
             echo ""
             find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
       ;;
+      patch)
+            echo "The Delta backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*img.patch' | sort
+      ;;
       failed)
             echo "The Failed backups are:"
             echo ""
-            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
+            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
       ;;
       all)
             echo "The Daily backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*daily.img' | sort
             echo ""
+            echo "The Delta backups are:"
+            echo ""
+            find "$DIR" -maxdepth 1 -name '*img.patch' | sort
             echo "The Weekly backups are:"
             echo ""
             find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
@@ -187,7 +233,7 @@ function ListBackups {
             echo ""
             echo "The Failed backups are:"
             echo ""
-            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img" | sort
+            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
       ;;
       esac
 }
@@ -232,7 +278,7 @@ function DeclaredServices {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      
+
       case "$1" in
       stop)
       ## Quit the declared services
@@ -251,18 +297,18 @@ function DeclaredServices {
                         fi
                   fi
 
-      done 
+      done
       ;;
 
       start)
       ##Restart the stopped services
             for service in $SERVICES
             do
-            
-                        if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
-                                    echo "Starting $service..."
-                                    /etc/init.d/"$service" start
-                        fi
+
+		if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
+			echo "Starting $service..."
+			/etc/init.d/"$service" start
+		fi
             done 
       ;;
       esac
@@ -277,23 +323,23 @@ function WriteBackupToDisk {
       echo ""
       echo "$FUNCNAME"
       echo ""
-      
+
       # First sync disks
       sync; sync
       echo ""
       echo "Backing up SD card to .IMG file on HDD"
-      
+
       ## Write the image to the drive
       SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
       pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
-      mv "$OFILE" "$OFILEFINAL"  
+      mv "$OFILE" "$OFILEFINAL"
       echo ""
       echo "RaspberryPI backup process completed!"
       echo "The Backup file is: $OFILEFINAL"
 
       ListBackups daily
-      
+
       ## Remove old daily backups beyond $KEEPDAILY
       echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
@@ -308,7 +354,7 @@ function WriteBackupToDisk {
             echo ""
             echo "There were no backups older than $KEEPDAILY days to delete."
       fi
-      
+
       ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
@@ -323,16 +369,11 @@ function WriteBackupToDisk {
             echo "Deleting:"
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-            
+
             ListBackups daily
       else
             echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
       fi
-      
-      ## Make the weekly and monthly backups
-      WeeklyMonthlyBackups
-      
-      ListBackups all
 }
 
 
@@ -379,7 +420,7 @@ function WeeklyMonthlyBackups {
             echo "Deleting:"
             find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY
             find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
-            
+
       else
             echo ""
             echo "There were no weekly backups older than $KEEPWEEKLY days to delete."
@@ -408,8 +449,8 @@ function WeeklyMonthlyBackups {
             CheckDiskSpace
             pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
       fi
-      
-      
+
+
             ## Remove old monthly backups beyond $KEEPMONTHLY
       echo ""
       echo "Looking for backups older than $KEEPMONTHLY days..."
@@ -425,7 +466,7 @@ function WeeklyMonthlyBackups {
             echo ""
             echo "There were no monthly backups older than $KEEPMONTHLY days to delete."
       fi
-      
+
       ListBackups monthly
 }
 
@@ -448,8 +489,8 @@ function TestRun {
       echo ""
       echo "The daily backups are:"
       ListBackups daily
-      
-      
+
+
       ## Remove old daily backups beyond $KEEPDAILY
       echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
@@ -464,8 +505,8 @@ function TestRun {
             echo ""
             echo "There were no backups older than $KEEPDAILY days to delete."
       fi
-      
-      
+
+
       ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
@@ -475,20 +516,20 @@ function TestRun {
             echo "There are more than $KEEPDAILY daily backups!"
             echo ""
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
-            
+
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
             echo ""
             echo "Deleting:"
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-            
+
             ListBackups daily
       else
             echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
       fi
-      
+
       WeeklyMonthlyBackups
-      
+
       ListBackups all
 
       ## Delete the empty files that were made
@@ -507,11 +548,10 @@ DeclaredServices stop
 if [[ $TESTRUN == 0 ]] 
 then
   WriteBackupToDisk
+  WeeklyMonthlyBackups
   MakeIncrementalBackup
 else
   TestRun
 fi
 
 DeclaredServices start
-
-
