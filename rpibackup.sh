@@ -568,9 +568,7 @@ fi
 
 
 
-##Figure out how many seconds/minutes/hours the backup took...
+##Figure out how many minutes the backup took...
 ENDTIME=$(date +%s)
 ELAPSEDTIME=$((ENDTIME - STARTTIME))
-echo "It took $ELAPSEDTIME seconds to complete this backup!"
-echo "That's $((ELAPSEDTIME / 60)) minutes!"
-echo "And $((ELAPSEDTIME /60 /60)) hours!"
+echo "It took $((ELAPSEDTIME / 60)) minutes to complete this backup!"
