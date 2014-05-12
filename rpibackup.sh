@@ -107,35 +107,36 @@ function MakeIncrementalBackup {
 
 ## Adapted from: http://stackoverflow.com/a/15808052
 function RestoreIncrementalBackup {
+## Check if a patchfile was passed
+if [[ -z "$1" ]]; then
+## If no patchfile was passed then get the user to select one
 	PATCHFILES=($(find "$DIR" -maxdepth 1 -type f -name '*.patch'))
 
 	PROMPT="Please select a file:"
 
 	PS3="$PROMPT"
-select patchfile in "${PATCHFILES[@]}" "Quit" ; do 
-    if (( REPLY == 1 + ${#PATCHFILES[@]} )) ; then
-        exit
+	select PATCHFILE in "${PATCHFILES[@]}" "Quit" ; do 
+		if (( REPLY == 1 + ${#PATCHFILES[@]} )) ; then
+        	exit
 
-    elif (( REPLY > 0 && REPLY <= ${#PATCHFILES[@]} )) ; then
-        echo  "You picked $patchfile which is file $REPLY"
-        ##                   ^                        ^
-        ## The selected patchfile      The selected option
-        break
+		elif (( REPLY > 0 && REPLY <= ${#PATCHFILES[@]} )) ; then
+			echo  "You picked $PATCHFILE which is file $REPLY"
+			##                   ^                        ^
+			## The selected patchfile      The selected option
+## TODO fix this code!
+			xdelta3 -d -v -s  $PATCHFILE remadebackup_20140508_222319.daily.img
+			break
 
-    else
-        echo "Invalid option. Try another one."
-    fi
-done
-
-## Reads patchfiles in the dir and prints them out
-	for patchfile in ${PATCHFILES[*]}
-	do
-	  printf "   %s\n" $patchfile
+		else
+			echo "Invalid option. Try another one."
+		fi
 	done
 
+## If a patchfile was passed then try to rebuild the .IMG file with it
+else
+xdelta3 -d -v -s  $PATCHFILE remadebackup_20140508_222319.daily.img
 
-    xdelta3 -d -v -s backup_20140508_152105.daily.img patch0837 remadebackup_20140508_222319.daily.img
-
+fi
 }
 
 function InitialSetup {
@@ -511,23 +512,50 @@ function TestRun {
 ## From http://stackoverflow.com/questions/16908084/linux-bash-script-to-calculate-time-elapsed
 STARTTIME=$(date +%s)
 
-InitialSetup
+## See if a parameter was passed to do RestoreBackup
+if [[ ! -z "$1" ]]; then
+	## A parameter was passed so parse the command line for arguments
 
-DeclaredServices stop
+	FLAGS=':r'
+	while getopts $FLAGS FLAG
+	do
+    		case $FLAG in
+        	r  )    ARGUMENT=$OPTARG
+        		## Check if the command line includes a patchfile to 
+        		## use and pass it to the RestoreBackup function
+        		if [[ ! -z "$ARGUMENT" ]]; then
+        			#RestoreBackup "$ARGUMENT"
+        			echo "RestoreBackup $ARGUMENT"
+        		else
+        			#RestoreBackup
+        			echo "RestoreBackup"
+        		fi
+        	;;
+        	*  )    echo "Missing a valid argument. /nQuitting."
+        	;;
+    		esac
+	done
+	
 
-## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
-if [[ $TESTRUN == 0 ]] 
-then
-  WriteBackupToDisk
-  DeclaredServices start
-  WeeklyMonthlyBackups
-  MakeIncrementalBackup
+	
+## If not, run the script as normal
 else
-  TestRun
-  DeclaredServices start
+  InitialSetup
+  DeclaredServices stop
+
+  ## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
+  if [[ $TESTRUN == 0 ]] 
+  then
+    WriteBackupToDisk
+    DeclaredServices start
+    WeeklyMonthlyBackups
+    MakeIncrementalBackup
+  else
+    TestRun
+    DeclaredServices start
+  fi
+
 fi
-
-
 
 ##Figure out how many minutes the backup took...
 ENDTIME=$(date +%s)
