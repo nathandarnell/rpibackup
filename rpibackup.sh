@@ -57,7 +57,6 @@ function MakeIncrementalBackup {
         ## Whatever weekly backup is the most recent, that is what all the daily incrementals are going to be based on
         echo "Making an incremental backup based on the most recent weekly backup which is:"
         echo "$DELTAORIG"
-        echo ""
         echo "This should take about 30 minutes and it is now $(date +"%T")"
         xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
 
@@ -74,13 +73,11 @@ function MakeIncrementalBackup {
       echo "Looking for delta backups older than $KEEPDAILY days..."
 
       if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-            echo ""
             echo "Found delta backups older than $KEEPDAILY days!"
             echo "Deleting the delta backups older than $KEEPDAILY days..."
             find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" -exec rm {} \;
             ListBackups patch
       else
-            echo ""
             echo "There were no delta backups older than $KEEPDAILY days to delete."
       fi
 
@@ -88,13 +85,10 @@ function MakeIncrementalBackup {
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
       if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" | wc -l)" -gt "$KEEPDAILY" ]]; then
-            echo ""
             echo "There are more than $KEEPDAILY delta backups!"
-            echo ""
             echo "Removing backups so there are only $KEEPDAILY delta backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-            echo ""
             echo "Deleting:"
             find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
@@ -153,7 +147,6 @@ function InitialSetup {
 
       ## Start the backup
       echo "Starting RaspberryPi backup process!"
-      echo ""
 
       ## First check if pv package is installed, if not, install it first
       PACKAGESTATUS=$(dpkg -s pv | grep Status);
@@ -161,16 +154,13 @@ function InitialSetup {
       if [[ $PACKAGESTATUS == S* ]]
       then
             echo "Package 'pv' is installed"
-            echo ""
       else
             echo "Package 'pv' is NOT installed"
             echo "Installing package 'pv'. Please wait..."
-            echo ""
             apt-get -y install pv
       fi
 
       ## Check if backup directory exists
-      echo ""
       echo "Checking for the backup directory $DIR..."
       if [[ ! -d "$DIR" ]]; then
             echo "Backup directory $DIR doesn't exist, creating it now!"
@@ -198,47 +188,34 @@ function ListBackups {
       case "$LISTBACKUPINPUT" in
       daily)
             echo "The Daily backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*daily.img' | sort
       ;;
       weekly)
             echo "The Weekly backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
       ;;
       monthly)
             echo "The Monthly backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
       ;;
       patch)
             echo "The Delta backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*img.patch' | sort
       ;;
       failed)
             echo "The Failed backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
       ;;
       all)
             echo "The Daily backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*daily.img' | sort
-            echo ""
             echo "The Delta backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*img.patch' | sort
             echo "The Weekly backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
-            echo ""
             echo "The Monthly backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
-            echo ""
             echo "The Failed backups are:"
-            echo ""
             find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
       ;;
       esac
@@ -332,7 +309,6 @@ function WriteBackupToDisk {
 
       # First sync disks
       sync; sync
-      echo ""
       echo "Backing up SD card to .IMG file on HDD"
 
       ## Write the image to the drive
@@ -340,24 +316,20 @@ function WriteBackupToDisk {
       pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
       ## Finalize the backup
       mv "$OFILE" "$OFILEFINAL"
-      echo ""
       echo "RaspberryPI backup process completed!"
       echo "The Backup file is: $OFILEFINAL"
 
       ListBackups daily
 
       ## Remove old daily backups beyond $KEEPDAILY
-      echo ""
       echo "Looking for backups older than $KEEPDAILY days..."
 
       if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-            echo ""
             echo "Found backups older than $KEEPDAILY days!"
             echo "Deleting the backups older than $KEEPDAILY days..."
             find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
             ListBackups daily
       else
-            echo ""
             echo "There were no backups older than $KEEPDAILY days to delete."
       fi
 
@@ -365,13 +337,10 @@ function WriteBackupToDisk {
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
       if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
-            echo ""
             echo "There are more than $KEEPDAILY daily backups!"
-            echo ""
             echo "Removing backups so there are only $KEEPDAILY daily backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-            echo ""
             echo "Deleting:"
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
             find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
@@ -401,7 +370,6 @@ function WeeklyMonthlyBackups {
 
 ## compare the weekly backups older than 7 days against the total weekly backups
             if [[ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]]; then
-                  echo ""
                   echo "None are older than 7 days" 
             else
                   echo "Need a new weekly backup.  Making it now..."
@@ -420,7 +388,6 @@ function WeeklyMonthlyBackups {
       echo "Looking for backups older than $KEEPWEEKLY days..."
 
       if [[ "$(find $DIR -maxdepth 1 -name "*.weekly.img" -mtime +"$KEEPWEEKLY" | wc -l)" -ge "1" ]]; then
-            echo ""
             echo "Found backups older than $KEEPWEEKLY days!"
             echo "Deleting the backups older than $KEEPWEEKLY days..."
             echo "Deleting:"
@@ -428,7 +395,6 @@ function WeeklyMonthlyBackups {
             find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
 
       else
-            echo ""
             echo "There were no weekly backups older than $KEEPWEEKLY days to delete."
       fi
 
@@ -439,11 +405,9 @@ function WeeklyMonthlyBackups {
       echo ""
       echo "Checking for monthly backups..."
       if [[ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]]; then 
-            echo ""
            echo "Monthly backups were found. Checking if a new one is needed..."
 
             if [[ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]]; then
-                        echo ""
                   echo "None are older than 30 days.  Not making a new one." 
             else
                   echo "Need a new monthly backup.  Making it now..."
@@ -458,18 +422,15 @@ function WeeklyMonthlyBackups {
 
 
             ## Remove old monthly backups beyond $KEEPMONTHLY
-      echo ""
       echo "Looking for backups older than $KEEPMONTHLY days..."
 
       if [[ "$(find $DIR -maxdepth 1 -name "*.monthly.img" -mtime +"$KEEPMONTHLY" | wc -l)" -ge "1" ]]; then
-            echo ""
             echo "Found backups older than $KEEPMONTHLY days!"
             echo "Deleting the backups older than $KEEPMONTHLY days..."
             echo "Deleting:"
             find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY
             find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
       else
-            echo ""
             echo "There were no monthly backups older than $KEEPMONTHLY days to delete."
       fi
 
