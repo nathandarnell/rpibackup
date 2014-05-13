@@ -27,6 +27,7 @@ KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly ba
 TESTRUN=0                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
 TESTRUNPERM=1                 ## Set this to "0" if you don't want to leave the TestRun files on the disk, but delete them (Leaving the files can be useful for testing the weekly and monthly backups)
 INCREMENTALBACKUPS=1          ## Set this to 0 if you want to disable incremental backups or make it 1 to enable them
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ##################################################################
 ## /CONFIGURE
 ##################################################################
