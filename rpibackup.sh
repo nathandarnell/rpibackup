@@ -58,6 +58,8 @@ function MakeIncrementalBackup {
         echo "Making an incremental backup based on the most recent weekly backup which is:"
         echo "$DELTAORIG"
         echo "This should take about 30 minutes and it is now $(date +"%T")"
+        
+        
         xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
 
         ## Now that the delta has been made, delete the fullsize daily backup
