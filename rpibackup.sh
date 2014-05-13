@@ -512,33 +512,46 @@ function TestRun {
 ## From http://stackoverflow.com/questions/16908084/linux-bash-script-to-calculate-time-elapsed
 STARTTIME=$(date +%s)
 
+
 ## See if a parameter was passed to do RestoreBackup
 if [[ ! -z "$1" ]]; then
-	## A parameter was passed so parse the command line for arguments
-
-	FLAGS=':r'
-	while getopts $FLAGS FLAG
-	do
-    		case $FLAG in
-        	r  )
-        		## Check if the command line includes a patchfile to 
-        		## use and pass it to the RestoreBackup function
-        		if [[ ! -z "$OPTARG" ]]; then
-        			#RestoreBackup "$ARGUMENT"
-        			echo "RestoreBackup $OPTARG"
-        		else
+  ## A parameter was passed so parse the command line for arguments
+	
+	## See if there are more than one arguments
+	if [[ $# -lt 2 ]]; then
+	## Check if the argument passed can be used and suppress the system errors
+		FLAGS=:r
+		while getopts $FLAGS FLAG
+		do
+    			case $FLAG in
+        		r  )
         			#RestoreBackup
         			echo "RestoreBackup"
-        		fi
-        	;;
-        	*  )    echo "Missing a valid argument. \nQuitting."
-        	;;
-    		esac
-	done
-	
+        		;;
+        		*  )    echo "Missing a valid argument. Quitting."
+        			exit 1
+        		;;
+    			esac
+		done
+	else
+	## More than one argument so try and parse them as well
+		FLAGS=:r:
+		while getopts $FLAGS FLAG
+		do
+    			case $FLAG in
+        		r  )
+        			## Check if the command line includes a patchfile to 
+        			## use and pass it to the RestoreBackup function
+        			echo "RestoreBackup $OPTARG"
+        		;;
+        		*  )    echo "Missing a valid argument. Quitting."
+        		;;
+    			esac
+		done	
+	fi
 
 	
-## If not, run the script as normal
+## If no arguments were passed, run the script as normal
 else
   InitialSetup
   DeclaredServices stop
