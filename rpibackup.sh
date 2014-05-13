@@ -43,6 +43,9 @@ OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename
 ##################################################################
 
 function MakeIncrementalBackup {
+	echo ""
+	echo "$FUNCNAME"
+	echo ""
     if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
         ## Check if there is a weekly backup to use as the base for the delta file
         if [[ -s "$(find "$DIR" -maxdepth 1 -name '*weekly.img')" ]]; then
