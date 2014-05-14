@@ -67,7 +67,7 @@ function MakeIncrementalBackup {
         xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
         DELTAENDTIME=$(date +%s)
         echo "The incremental backup is finished!"
-        echo "The time is now $(date +"%T") and it took $((DELTAENDTIME - DELTASTARTTIME / 60)) minutes to make!"
+        echo "The time is now $(date +"%T") and it took $(((DELTAENDTIME - DELTASTARTTIME) / 60)) minutes to make!"
 
         ## Now that the delta has been made, delete the fullsize daily backup
         echo "Deleting the fullsize daily backup:"
