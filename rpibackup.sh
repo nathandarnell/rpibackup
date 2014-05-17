@@ -146,34 +146,38 @@ xdelta3 -d -v -s  $PATCHFILE remadebackup_20140508_222319.daily.img
 fi
 }
 
+
+##################################################################
+## Check for PV to give a status bar for the writing and
+## check for $DIR to write the backups to
+##################################################################
 function InitialSetup {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
-      ## Screen clear
-      clear
+echo ""
+echo "$FUNCNAME"
+echo ""
+## Screen clear
+clear
 
-      ## Start the backup
-      echo "Starting RaspberryPi backup process!"
+## Start the backup
+echo "Starting RaspberryPi backup process!"
 
-      ## First check if pv package is installed, if not, install it first
-      PACKAGESTATUS=$(dpkg -s pv | grep Status);
+## First check if pv package is installed, if not, install it first
+PACKAGESTATUS=$(dpkg -s pv | grep Status);
 
-      if [[ $PACKAGESTATUS == S* ]]
-      then
-            echo "Package 'pv' is installed"
-      else
-            echo "Package 'pv' is NOT installed"
-            echo "Installing package 'pv'. Please wait..."
-            apt-get -y install pv
-      fi
+if [[ $PACKAGESTATUS == S* ]]; then
+  echo "Package 'pv' is installed"
+  else
+  echo "Package 'pv' is NOT installed"
+  echo "Installing package 'pv'. Please wait..."
+  apt-get -y install pv
+fi
 
-      ## Check if backup directory exists
-      echo "Checking for the backup directory $DIR..."
-      if [[ ! -d "$DIR" ]]; then
-            echo "Backup directory $DIR doesn't exist, creating it now!"
-            mkdir $DIR
-      fi
+## Check if backup directory exists
+echo "Checking for the backup directory $DIR..."
+if [[ ! -d "$DIR" ]]; then
+  echo "Backup directory $DIR doesn't exist, creating it now!"
+  mkdir $DIR
+fi
 }
 
 
@@ -184,49 +188,34 @@ function InitialSetup {
 ## Then list all files without ".img"
 ##################################################################
 function ListBackups {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
 
-      LISTBACKUPINPUT=$1
-            if [[ $# -eq 0 ]] ; then
-                        LISTBACKUPINPUT=all
-            fi
+LISTBACKUPINPUT=$1
+if [[ $# -eq 0 ]] ; then
+  LISTBACKUPINPUT=all
+fi
 
-      case "$LISTBACKUPINPUT" in
-      daily)
-            echo "The Daily backups are:"
-            find "$DIR" -maxdepth 1 -name '*daily.img' | sort
-      ;;
-      weekly)
-            echo "The Weekly backups are:"
-            find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
-      ;;
-      monthly)
-            echo "The Monthly backups are:"
-            find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
-      ;;
-      patch)
-            echo "The Delta backups are:"
-            find "$DIR" -maxdepth 1 -name '*img.patch' | sort
-      ;;
-      failed)
-            echo "The Failed backups are:"
-            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
-      ;;
-      all)
-            echo "The Daily backups are:"
-            find "$DIR" -maxdepth 1 -name '*daily.img' | sort
-            echo "The Delta backups are:"
-            find "$DIR" -maxdepth 1 -name '*img.patch' | sort
-            echo "The Weekly backups are:"
-            find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
-            echo "The Monthly backups are:"
-            find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
-            echo "The Failed backups are:"
-            find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
-      ;;
-      esac
+case "$LISTBACKUPINPUT" in
+  daily)
+    echo "The Daily backups are:"
+    find "$DIR" -maxdepth 1 -name '*daily.img' | sort
+  ;;
+  weekly)
+    echo "The Weekly backups are:"
+    find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
+  ;;
+  monthly)
+    echo "The Monthly backups are:"
+    find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
+  ;;
+  patch)
+    echo "The Delta backups are:"
+    find "$DIR" -maxdepth 1 -name '*img.patch' | sort
+  ;;
+  failed)
+    echo "The Failed backups are:"
+    find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
+  ;;
+esac
 }
 
 
@@ -262,43 +251,39 @@ function CheckDiskSpace {
 ## Turn on and off the services listed in $SERVICES
 ##################################################################
 function DeclaredServices {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
+echo ""
+echo "$FUNCNAME"
+echo ""
 
-      case "$1" in
-      stop)
-      ## Quit the declared services
-      for service in $SERVICES
-      do
-            if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
-                        echo "Stopping $service..."
-                        /etc/init.d/"$service" stop
-                  ## Try replacing ps grep with pgrep and see if it works...  Old IF is below...
-                  ##if (ps ax | grep -v grep | grep "$service" > /dev/null)
-                  ##
-                        if (pgrep -f "$service" > /dev/null)
-                        then
-                                    echo "$service not stopped!"
-                                    break
-                        fi
-                  fi
-
-      done
-      ;;
-
-      start)
-      ##Restart the stopped services
-            for service in $SERVICES
-            do
-
-		if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
-			echo "Starting $service..."
-			/etc/init.d/"$service" start
-		fi
-            done 
-      ;;
-      esac
+case "$1" in
+  stop)
+    ## Quit the declared services
+    for service in $SERVICES
+    do
+      if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
+        echo "Stopping $service..."
+        /etc/init.d/"$service" stop
+        ## Try replacing ps grep with pgrep and see if it works...  Old IF is below...
+        ##if (ps ax | grep -v grep | grep "$service" > /dev/null)
+        ##
+        if (pgrep -f "$service" > /dev/null); then
+          echo "$service not stopped!"
+          break
+        fi
+    fi
+    done
+  ;;
+  start)
+    ##Restart the stopped services
+    for service in $SERVICES
+    do
+      if [[ -n "$(find "$SERVICESDIR" -maxdepth 1 -name "$service")" ]]; then
+			  echo "Starting $service..."
+			  /etc/init.d/"$service" start
+		  fi
+    done 
+  ;;
+esac
 }
 
 
