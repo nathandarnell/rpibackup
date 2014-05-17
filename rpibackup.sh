@@ -188,34 +188,32 @@ function ListBackups {
 
 LISTBACKUPINPUT=$1
 if [[ $# -eq 0 ]] ; then
-  LISTBACKUPINPUT=all
+  return 1
+else
+  case "$LISTBACKUPINPUT" in
+    daily)
+      echo "The Daily backups are:"
+      find "$DIR" -maxdepth 1 -name '*daily.img' | sort
+    ;;
+    weekly)
+      echo "The Weekly backups are:"
+      find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
+    ;;
+    monthly)
+      echo "The Monthly backups are:"
+      find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
+    ;;
+    patch)
+      echo "The Delta backups are:"
+      find "$DIR" -maxdepth 1 -name '*img.patch' | sort
+    ;;
+    failed)
+      echo "The Failed backups are:"
+      find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
+    ;;
+  esac
 fi
-
-case "$LISTBACKUPINPUT" in
-  daily)
-    echo "The Daily backups are:"
-    find "$DIR" -maxdepth 1 -name '*daily.img' | sort
-  ;;
-  weekly)
-    echo "The Weekly backups are:"
-    find "$DIR" -maxdepth 1 -name '*weekly.img' | sort
-  ;;
-  monthly)
-    echo "The Monthly backups are:"
-    find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
-  ;;
-  patch)
-    echo "The Delta backups are:"
-    find "$DIR" -maxdepth 1 -name '*img.patch' | sort
-  ;;
-  failed)
-    echo "The Failed backups are:"
-    find "$DIR" -maxdepth 1 -mindepth 1 ! -name "*.img*" | sort
-  ;;
-esac
 }
-
-
 
 ##################################################################
 ## Borrowed and adapted from http://hustoknow.blogspot.com/2011/01/bash-script-to-check-disk-space.html
