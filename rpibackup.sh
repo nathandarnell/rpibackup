@@ -152,9 +152,6 @@ fi
 ## check for $DIR to write the backups to
 ##################################################################
 function InitialSetup {
-echo ""
-echo "$FUNCNAME"
-echo ""
 ## Screen clear
 clear
 
