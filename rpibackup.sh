@@ -41,6 +41,22 @@ OFILEFINALMONTHLY=${OFILEFINAL/daily./monthly.}  # Create final monthly filename
 ## /SET VARIABLES
 ##################################################################
 
+##################################################################
+## Consolodate the parts of WriteBackupToDisk and 
+## WeeklyMonthlyBackups that look for old or too many backups
+## and removes them verbosely
+##################################################################
+function PurgeOldBackups {
+echo ""
+echo "$FUNCNAME"
+echo ""
+
+}
+
+
+##################################################################
+## Make the delta file for the daily backup to reduce disk space usage
+##################################################################
 function MakeIncrementalBackup {
 	echo ""
 	echo "$FUNCNAME"
@@ -287,52 +303,48 @@ esac
 ## Begin the backup process, should take about 20 minutes from a 16GB Class 10 SD card to HDD and double that over Samba
 ##################################################################
 function WriteBackupToDisk {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
+echo ""
+echo "$FUNCNAME"
+echo ""
 
-      # First sync disks
-      sync; sync
-      echo "Backing up SD card to .IMG file on HDD"
+# First sync disks
+sync; sync
+echo "Backing up SD card to .IMG file on HDD"
 
-      ## Write the image to the drive
-      SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
-      pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
-      ## Finalize the backup
-      mv "$OFILE" "$OFILEFINAL"
-      echo "RaspberryPI backup process completed!"
-      echo "The Backup file is: $OFILEFINAL"
+## Write the image to the drive
+SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
+pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
 
+## Finalize the backup
+mv "$OFILE" "$OFILEFINAL"
+echo "RaspberryPI backup process completed!"
+echo "The Backup file is: $OFILEFINAL"
+ListBackups daily
+## Remove old daily backups beyond $KEEPDAILY
+echo "Looking for backups older than $KEEPDAILY days..."
+if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
+      echo "Found backups older than $KEEPDAILY days!"
+      echo "Deleting the backups older than $KEEPDAILY days..."
+      find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
       ListBackups daily
-
-      ## Remove old daily backups beyond $KEEPDAILY
-      echo "Looking for backups older than $KEEPDAILY days..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-            echo "Found backups older than $KEEPDAILY days!"
-            echo "Deleting the backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
-            ListBackups daily
-      else
-            echo "There were no backups older than $KEEPDAILY days to delete."
-      fi
-
-      ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
-      echo ""
-      echo "Looking for more daily backups than $KEEPDAILY..."
-      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
-            echo "There are more than $KEEPDAILY daily backups!"
-            echo "Removing backups so there are only $KEEPDAILY daily backups..."
-            
-            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-            echo "Deleting:"
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-
-            ListBackups daily
-      else
-            echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
-      fi
+else
+      echo "There were no backups older than $KEEPDAILY days to delete."
+fi
+## Remove daily backups if there are more than $KEEPDAILY in the $DIR
+echo ""
+echo "Looking for more daily backups than $KEEPDAILY..."
+if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
+      echo "There are more than $KEEPDAILY daily backups!"
+      echo "Removing backups so there are only $KEEPDAILY daily backups..."
+      
+      ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
+      echo "Deleting:"
+      find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
+      find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
+      ListBackups daily
+else
+      echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
+fi
 }
 
 
