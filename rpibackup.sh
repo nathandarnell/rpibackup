@@ -24,8 +24,6 @@ DIR=/media/1TB/$SUBDIR        ## Change to where you want the backups to be stor
 KEEPDAILY=7                   ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28                 ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
 KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly backups kept)
-TESTRUN=0                     ## Set this to "0" if you want to write to the disk.  Change it to do a test run to just use "TOUCH" and clean up after itself.
-TESTRUNPERM=1                 ## Set this to "0" if you don't want to leave the TestRun files on the disk, but delete them (Leaving the files can be useful for testing the weekly and monthly backups)
 INCREMENTALBACKUPS=1          ## Set this to 0 if you want to disable incremental backups or make it 1 to enable them
 PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 ##################################################################
@@ -240,8 +238,7 @@ function CheckDiskSpace {
   echo ""
   echo "$FUNCNAME"
   echo ""
-  ## No need to check diskspace if we're not writing real files!
-  if [[ "$TESTRUN" == 0 ]]; then
+
     # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
     # awk grabs the fourth column (Free), and cut removes the trailing G.
     DESTDISKSPACE="$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)"
@@ -257,9 +254,6 @@ function CheckDiskSpace {
     else
       echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
     fi
-  else
-    echo "Not going to check diskspace since we're only TOUCHing files here..."
-  fi
 }
 
 
@@ -447,75 +441,9 @@ function WeeklyMonthlyBackups {
       ListBackups monthly
 }
 
-
-
 ##################################################################
-## Does a test run of the write with TOUCH and cleans up after itself
+## PROGRAM START
 ##################################################################
-function TestRun {
-      echo ""
-      echo "$FUNCNAME"
-      echo ""
-      echo "Doing a test run of backing up SD card to .IMG file on HDD..."
-      CheckDiskSpace
-      touch "$OFILE"
-      mv "$OFILE" "$OFILEFINAL"
-      echo ""
-      echo "RaspberryPI backup process completed!"
-      echo "The Backup file is: $OFILEFINAL"
-      echo ""
-      echo "The daily backups are:"
-      ListBackups daily
-
-
-      ## Remove old daily backups beyond $KEEPDAILY
-      echo ""
-      echo "Looking for backups older than $KEEPDAILY days..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-            echo ""
-            echo "Found backups older than $KEEPDAILY days!"
-            echo "Deleting the backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
-            ListBackups daily
-      else
-            echo ""
-            echo "There were no backups older than $KEEPDAILY days to delete."
-      fi
-
-
-      ## Remove daily backups if there are more than $KEEPDAILY in the $DIR
-      echo ""
-      echo "Looking for more daily backups than $KEEPDAILY..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
-            echo ""
-            echo "There are more than $KEEPDAILY daily backups!"
-            echo ""
-            echo "Removing backups so there are only $KEEPDAILY daily backups..."
-
-            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-            echo ""
-            echo "Deleting:"
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
-            find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-
-            ListBackups daily
-      else
-            echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
-      fi
-
-      WeeklyMonthlyBackups
-
-      ListBackups all
-
-      ## Delete the empty files that were made
-      if [[ $TESTRUNPERM == 0 ]]; then
-            echo ""
-            echo "Cleaning up after myself by deleting the files that were just made"
-            rm -f "$OFILE" "$OFILEFINAL" "$OFILEFINALWEEKLY" "$OFILEFINALMONTHLY"
-      fi
-}
 
 ## Begin the program and keep track of how many seconds it takes...
 ## From http://stackoverflow.com/questions/16908084/linux-bash-script-to-calculate-time-elapsed
@@ -549,7 +477,7 @@ if [[ ! -z "$1" ]]; then
 		do
     			case $FLAG in
         		r  )
-        			## Check if the command line includes a patchfile to 
+        			## Check if the command line includes at patchfile to 
         			## use and pass it to the RestoreBackup function
         			echo "RestoreBackup $OPTARG"
         		;;
@@ -564,22 +492,16 @@ if [[ ! -z "$1" ]]; then
 else
   InitialSetup
   DeclaredServices stop
-
-  ## Check the TESTRUN variable and write to the disk or don't. Each returns a "0" for success and "1" for failure
-  if [[ $TESTRUN == 0 ]] 
-  then
-    WriteBackupToDisk
-    DeclaredServices start
-    WeeklyMonthlyBackups
-    MakeIncrementalBackup
-  else
-    TestRun
-    DeclaredServices start
-  fi
-
+  WriteBackupToDisk
+  DeclaredServices start
+  WeeklyMonthlyBackups
+  MakeIncrementalBackup
 fi
 
 ##Figure out how many minutes the backup took...
 ENDTIME=$(date +%s)
 ELAPSEDTIME=$((ENDTIME - STARTTIME))
 echo "It took $((ELAPSEDTIME / 60)) minutes to complete this backup!"
+##################################################################
+## PROGRAM END
+##################################################################
