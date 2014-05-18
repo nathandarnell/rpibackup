@@ -102,73 +102,38 @@ fi
 ## Make the delta file for the daily backup to reduce disk space usage
 ##################################################################
 function MakeIncrementalBackup {
-	echo ""
-	echo "$FUNCNAME"
-	echo ""
-    if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
-        ## Check if there is a weekly backup to use as the base for the delta file
-        if [[ -s "$(find "$DIR" -maxdepth 1 -name '*weekly.img')" ]]; then
-            ## Base the delta on the most resent weekly backup
-            DELTAORIG="$(find "$DIR" -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
-        else
-            echo "There are no weekly backups to base the delta on.  Something must have gone wrong..."
-            return 1 ## I think this means there was an error??
-        fi
-        
-        ## Make a delta of the daily backup using the weekly backup (??) as the original
-        ## Whatever weekly backup is the most recent, that is what all the daily incrementals are going to be based on
-        echo "Making an incremental backup based on the most recent weekly backup which is:"
-        echo "$DELTAORIG"
-        echo "This should take about 30 minutes and it is now $(date +"%T")"
-        DELTASTARTTIME=$(date +%s)
-        
-        xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".delta
-        DELTAENDTIME=$(date +%s)
-        echo "The incremental backup is finished!"
-        echo "The time is now $(date +"%T") and it took $(((DELTAENDTIME - DELTASTARTTIME) / 60)) minutes to make!"
-
-        ## Now that the delta has been made, delete the fullsize daily backup
-        echo "Deleting the fullsize daily backup:"
-        echo "$OFILEFINAL"
-        rm -f "$OFILEFINAL"
-        
-        
-        
-        
-	## Remove old delta backups beyond $KEEPDAILY
-      echo ""
-      echo "Looking for delta backups older than $KEEPDAILY days..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.img.delta" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-            echo "Found delta backups older than $KEEPDAILY days!"
-            echo "Deleting the delta backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.img.delta" -mtime +"$KEEPDAILY" -exec rm {} \;
-            ListBackups delta
-      else
-            echo "There were no delta backups older than $KEEPDAILY days to delete."
-      fi
-
-      ## Remove delta backups if there are more than $KEEPDAILY in the $DIR
-      echo ""
-      echo "Looking for more daily backups than $KEEPDAILY..."
-      if [[ "$(find $DIR -maxdepth 1 -name "*.img.delta" | wc -l)" -gt "$KEEPDAILY" ]]; then
-            echo "There are more than $KEEPDAILY delta backups!"
-            echo "Removing backups so there are only $KEEPDAILY delta backups..."
-            
-            ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-            echo "Deleting:"
-            find "$DIR" -maxdepth 1 -type f -name \*img.delta | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
-            find "$DIR" -maxdepth 1 -type f -name \*img.delta | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-
-            ListBackups delta
-      else
-            echo "There were no delta backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
-      fi
-
-    else
-        return
-    fi
-
+echo ""
+echo "$FUNCNAME"
+echo ""
+if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
+  ## Check if there is a weekly backup to use as the base for the delta file
+  if [[ -s "$(find "$DIR" -maxdepth 1 -name '*weekly.img')" ]]; then
+    ## Base the delta on the most resent weekly backup
+    DELTAORIG="$(find "$DIR" -maxdepth 1 -name '*weekly.img' | sort -rn | head -1)"
+  else
+    echo "There are no weekly backups to base the delta on.  Something must have gone wrong..."
+    return 1 ## I think this means there was an error??
+  fi
+  
+  ## Make a delta of the daily backup using the weekly backup (??) as the original
+  ## Whatever weekly backup is the most recent, that is what all the daily incrementals are going to be based on
+  echo "Making an incremental backup based on the most recent weekly backup which is:"
+  echo "$DELTAORIG"
+  echo "This should take about 30 minutes and it is now $(date +"%T")"
+  DELTASTARTTIME=$(date +%s)
+  xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".delta
+  DELTAENDTIME=$(date +%s)
+  echo "The incremental backup is finished!"
+  echo "The time is now $(date +"%T") and it took $(((DELTAENDTIME - DELTASTARTTIME) / 60)) minutes to make!"
+  ## Now that the delta has been made, delete the fullsize daily backup
+  echo "Deleting the fullsize daily backup:"
+  echo "$OFILEFINAL"
+  rm -f "$OFILEFINAL" 
+## Remove old delta backups beyond $KEEPDAILY
+PurgeOldBackups delta
+else
+  return
+fi
 }
 
 
@@ -365,30 +330,7 @@ echo "RaspberryPI backup process completed!"
 echo "The Backup file is: $OFILEFINAL"
 ListBackups daily
 ## Remove old daily backups beyond $KEEPDAILY
-echo "Looking for backups older than $KEEPDAILY days..."
-if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
-      echo "Found backups older than $KEEPDAILY days!"
-      echo "Deleting the backups older than $KEEPDAILY days..."
-      find $DIR -maxdepth 1 -name "*.daily.img" -mtime +"$KEEPDAILY" -exec rm {} \;
-      ListBackups daily
-else
-      echo "There were no backups older than $KEEPDAILY days to delete."
-fi
-## Remove daily backups if there are more than $KEEPDAILY in the $DIR
-echo ""
-echo "Looking for more daily backups than $KEEPDAILY..."
-if [[ "$(find $DIR -maxdepth 1 -name "*.daily.img" | wc -l)" -gt "$KEEPDAILY" ]]; then
-      echo "There are more than $KEEPDAILY daily backups!"
-      echo "Removing backups so there are only $KEEPDAILY daily backups..."
-      
-      ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
-      echo "Deleting:"
-      find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
-      find "$DIR" -maxdepth 1 -type f -name \*daily.img | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
-      ListBackups daily
-else
-      echo "There were no backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
-fi
+PurgeOldBackups daily
 }
 
 
@@ -397,84 +339,51 @@ fi
 ## Make weekly and monthly backups
 ##################################################################
 function WeeklyMonthlyBackups {
-      echo ""      
-      echo "$FUNCNAME"
-      echo ""
-
-
-      echo "Checking for weekly backups..."
-      if [[ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]]; then 
-            echo ""
-            echo "Weekly backups were found. Checking if a new one is needed..."
-
-
+  echo ""      
+  echo "$FUNCNAME"
+  echo ""
+  echo "Checking for weekly backups..."
+  if [[ -n "$(find $DIR -maxdepth 1 -name '*weekly.img')" ]]; then 
+    echo ""
+    echo "Weekly backups were found. Checking if a new one is needed..."
 ## compare the weekly backups older than 7 days against the total weekly backups
-            if [[ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]]; then
-                  echo "None are older than 7 days" 
-            else
-                  echo "Need a new weekly backup.  Making it now..."
-                  CheckDiskSpace
-                  pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
-            fi
-      else
-            echo "No weekly backups found so I am making the first one..."
-            CheckDiskSpace
-            pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
-      fi
+    if [[ "$(find $DIR -maxdepth 1 -name "*weekly.img" -mtime +7 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*weekly.img" | wc -l)" ]]; then
+      echo "None are older than 7 days" 
+    else
+      echo "Need a new weekly backup.  Making it now..."
+      CheckDiskSpace
+      pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"	## pv gives the user some feedback
+    fi
+  else
+    echo "No weekly backups found so I am making the first one..."
+    CheckDiskSpace
+    pv "$OFILEFINAL" > "$OFILEFINALWEEKLY"
+  fi
 
+## Remove old weekly backups
+PurgeOldBackups weekly
+ListBackups weekly
 
-      ## Remove old weekly backups beyond $KEEPWEEKLY
-      echo ""
-      echo "Looking for backups older than $KEEPWEEKLY days..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.weekly.img" -mtime +"$KEEPWEEKLY" | wc -l)" -ge "1" ]]; then
-            echo "Found backups older than $KEEPWEEKLY days!"
-            echo "Deleting the backups older than $KEEPWEEKLY days..."
-            echo "Deleting:"
-            find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY
-            find $DIR -maxdepth 1 -name "*weekly.img" -mtime +$KEEPWEEKLY -exec rm {} \;
-
-      else
-            echo "There were no weekly backups older than $KEEPWEEKLY days to delete."
-      fi
-
-      ListBackups weekly
-      
-      
-      ## Make monthly backup
-      echo ""
-      echo "Checking for monthly backups..."
-      if [[ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]]; then 
-           echo "Monthly backups were found. Checking if a new one is needed..."
-
-            if [[ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]]; then
-                  echo "None are older than 30 days.  Not making a new one." 
-            else
-                  echo "Need a new monthly backup.  Making it now..."
-                  CheckDiskSpace
-                  pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
-            fi 
-      else
-            echo "No monthly backups found so I am making the first one..."
-            CheckDiskSpace
-            pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
-      fi
-
-
-            ## Remove old monthly backups beyond $KEEPMONTHLY
-      echo "Looking for backups older than $KEEPMONTHLY days..."
-
-      if [[ "$(find $DIR -maxdepth 1 -name "*.monthly.img" -mtime +"$KEEPMONTHLY" | wc -l)" -ge "1" ]]; then
-            echo "Found backups older than $KEEPMONTHLY days!"
-            echo "Deleting the backups older than $KEEPMONTHLY days..."
-            echo "Deleting:"
-            find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY
-            find $DIR -maxdepth 1 -name "*monthly.img" -mtime +$KEEPMONTHLY -exec rm {} \; ## Remove any monthly backups that are too old
-      else
-            echo "There were no monthly backups older than $KEEPMONTHLY days to delete."
-      fi
-
-      ListBackups monthly
+## Make monthly backup
+echo ""
+echo "Checking for monthly backups..."
+if [[ -n "$(find $DIR -maxdepth 1 -name '*monthly.img')" ]]; then 
+  echo "Monthly backups were found. Checking if a new one is needed..."
+    if [[ "$(find $DIR -maxdepth 1 -name "*monthly.img" -mtime +30 | wc -l)" -lt "$(find $DIR -maxdepth 1 -name "*monthly.img" | wc -l)" ]]; then
+      echo "None are older than 30 days.  Not making a new one." 
+    else
+      echo "Need a new monthly backup.  Making it now..."
+      CheckDiskSpace
+      pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"  ## pv gives the user some feedback
+    fi 
+else
+  echo "No monthly backups found so I am making the first one..."
+  CheckDiskSpace
+  pv "$OFILEFINAL" > "$OFILEFINALMONTHLY"
+fi
+## Remove old monthly backups beyond $KEEPMONTHLY
+PurgeOldBackups monthly
+ListBackups monthly
 }
 
 ##################################################################
@@ -484,7 +393,6 @@ function WeeklyMonthlyBackups {
 ## Begin the program and keep track of how many seconds it takes...
 ## From http://stackoverflow.com/questions/16908084/linux-bash-script-to-calculate-time-elapsed
 STARTTIME=$(date +%s)
-
 
 ## See if a parameter was passed to do RestoreBackup
 if [[ ! -z "$1" ]]; then
