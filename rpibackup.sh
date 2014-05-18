@@ -50,7 +50,51 @@ function PurgeOldBackups {
 echo ""
 echo "$FUNCNAME"
 echo ""
-
+## See what kind of backup to purge and change the value of $KEEPTIME to the appropriate value
+if [[ $1 = daily ]]; then
+  KEEPTIME=$KEEPDAILY
+  KEEPTYPE=daily.img
+elif [[ $1 = weekly ]]; then
+  KEEPTIME=$KEEPWEEKLY
+  KEEPTYPE=weekly.img
+elif [[ $1 = monthly ]]; then
+  KEEPTIME=$KEEPMONTHLY
+  KEEPTYPE=monthly.img
+elif [[ $1 = delta ]]; then
+  KEEPTIME=$KEEPDAILY
+  KEEPTYPE=img.delta
+else
+  return 1
+fi
+## Remove old selected backups beyond $KEEPTIME based on age
+echo "Looking for backups older than $KEEPTIME days..."
+if [[ "$(find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" | wc -l)" -ge "1" ]]; then
+  echo "Found backups older than $KEEPTIME days!"
+  echo "Deleting the backups older than $KEEPTIME days..."
+  find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" -exec rm {} \;
+  ListBackups "$1"
+else
+      echo "There were no backups older than $KEEPTIME days to delete."
+fi
+## Only run this for dailys and deltas
+if [[ $1 = daily ]] || [[ $1 = delta ]]; then
+  ## Remove selected backups if there are more than $KEEPTIME in the $DIR based on count
+  echo ""
+  echo "Looking for more daily backups than $KEEPTIME..."
+  if [[ "$(find $DIR -maxdepth 1 -name "*$KEEPTYPE" | wc -l)" -gt "$KEEPTIME" ]]; then
+    echo "There are more than $KEEPTIME daily backups!"
+    echo "Removing backups so there are only $KEEPTIME daily backups..."
+    ## This should find the selected backups in $DIR and delete them if there are more than $KEEPTIME
+    echo "Deleting:"
+    find "$DIR" -maxdepth 1 -type f -name \*$KEEPTYPE | sort -n -t _ -k 3 | head -n -$KEEPTIME | xargs
+    find "$DIR" -maxdepth 1 -type f -name \*$KEEPTYPE | sort -n -t _ -k 3 | head -n -$KEEPTIME | xargs rm -f
+    ListBackups "$1"
+  else
+    echo "There were no backups older than $KEEPTIME days, or more in number than $KEEPTIME to delete."
+  fi
+else
+return
+fi
 }
 
 
@@ -78,7 +122,7 @@ function MakeIncrementalBackup {
         echo "This should take about 30 minutes and it is now $(date +"%T")"
         DELTASTARTTIME=$(date +%s)
         
-        xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".patch
+        xdelta3 -e -s "$DELTAORIG" "$OFILEFINAL" "$OFILEFINAL".delta
         DELTAENDTIME=$(date +%s)
         echo "The incremental backup is finished!"
         echo "The time is now $(date +"%T") and it took $(((DELTAENDTIME - DELTASTARTTIME) / 60)) minutes to make!"
@@ -91,15 +135,15 @@ function MakeIncrementalBackup {
         
         
         
-	## Remove old patch/delta backups beyond $KEEPDAILY
+	## Remove old delta backups beyond $KEEPDAILY
       echo ""
       echo "Looking for delta backups older than $KEEPDAILY days..."
 
-      if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.img.delta" -mtime +"$KEEPDAILY" | wc -l)" -ge "1" ]]; then
             echo "Found delta backups older than $KEEPDAILY days!"
             echo "Deleting the delta backups older than $KEEPDAILY days..."
-            find $DIR -maxdepth 1 -name "*.img.patch" -mtime +"$KEEPDAILY" -exec rm {} \;
-            ListBackups patch
+            find $DIR -maxdepth 1 -name "*.img.delta" -mtime +"$KEEPDAILY" -exec rm {} \;
+            ListBackups delta
       else
             echo "There were no delta backups older than $KEEPDAILY days to delete."
       fi
@@ -107,16 +151,16 @@ function MakeIncrementalBackup {
       ## Remove delta backups if there are more than $KEEPDAILY in the $DIR
       echo ""
       echo "Looking for more daily backups than $KEEPDAILY..."
-      if [[ "$(find $DIR -maxdepth 1 -name "*.img.patch" | wc -l)" -gt "$KEEPDAILY" ]]; then
+      if [[ "$(find $DIR -maxdepth 1 -name "*.img.delta" | wc -l)" -gt "$KEEPDAILY" ]]; then
             echo "There are more than $KEEPDAILY delta backups!"
             echo "Removing backups so there are only $KEEPDAILY delta backups..."
             
             ## This should find daily backups in the $DIR and delete them if there are more than $KEEPDAILY
             echo "Deleting:"
-            find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
-            find "$DIR" -maxdepth 1 -type f -name \*img.patch | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
+            find "$DIR" -maxdepth 1 -type f -name \*img.delta | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs
+            find "$DIR" -maxdepth 1 -type f -name \*img.delta | sort -n -t _ -k 3 | head -n -$KEEPDAILY | xargs rm -f
 
-            ListBackups patch
+            ListBackups delta
       else
             echo "There were no delta backups older than $KEEPDAILY days, or more in number than $KEEPDAILY to delete."
       fi
@@ -130,24 +174,24 @@ function MakeIncrementalBackup {
 
 ## Adapted from: http://stackoverflow.com/a/15808052
 function RestoreIncrementalBackup {
-## Check if a patchfile was passed
+## Check if a deltafile was passed
 if [[ -z "$1" ]]; then
-## If no patchfile was passed then get the user to select one
-	PATCHFILES=($(find "$DIR" -maxdepth 1 -type f -name '*.patch'))
+## If no deltafile was passed then get the user to select one
+	DELTAFILES=($(find "$DIR" -maxdepth 1 -type f -name '*.delta'))
 
 	PROMPT="Please select a file:"
 
 	PS3="$PROMPT"
-	select PATCHFILE in "${PATCHFILES[@]}" "Quit" ; do 
-		if (( REPLY == 1 + ${#PATCHFILES[@]} )) ; then
+	select DELTAFILE in "${DELTAFILES[@]}" "Quit" ; do 
+		if (( REPLY == 1 + ${#DELTAFILES[@]} )) ; then
         	exit
 
-		elif (( REPLY > 0 && REPLY <= ${#PATCHFILES[@]} )) ; then
-			echo  "You picked $PATCHFILE which is file $REPLY"
+		elif (( REPLY > 0 && REPLY <= ${#DELTAFILES[@]} )) ; then
+			echo  "You picked $DELTAFILE which is file $REPLY"
 			##                   ^                        ^
-			## The selected patchfile      The selected option
+			## The selected deltafile      The selected option
 ## TODO fix this code!
-			xdelta3 -d -v -s  $PATCHFILE remadebackup_20140508_222319.daily.img
+			xdelta3 -d -v -s  $DELTAFILE remadebackup_20140508_222319.daily.img
 			break
 
 		else
@@ -155,9 +199,9 @@ if [[ -z "$1" ]]; then
 		fi
 	done
 
-## If a patchfile was passed then try to rebuild the .IMG file with it
+## If a delta file was passed then try to rebuild the .IMG file with it
 else
-xdelta3 -d -v -s  $PATCHFILE remadebackup_20140508_222319.daily.img
+xdelta3 -d -v -s  $DELTAFILE remadebackup_20140508_222319.daily.img
 
 fi
 }
@@ -197,7 +241,7 @@ fi
 
 ##################################################################
 ## List all the files with ".img" in $DIR
-## Lists all the files with "img.patch in $DIR
+## Lists all the files with "img.delta in $DIR
 ## Then list all files without ".img"
 ##################################################################
 function ListBackups {
@@ -219,9 +263,9 @@ else
       echo "The Monthly backups are:"
       find "$DIR" -maxdepth 1 -name '*monthly.img' | sort
     ;;
-    patch)
+    delta)
       echo "The Delta backups are:"
-      find "$DIR" -maxdepth 1 -name '*img.patch' | sort
+      find "$DIR" -maxdepth 1 -name '*img.delta' | sort
     ;;
     failed)
       echo "The Failed backups are:"
@@ -235,25 +279,25 @@ fi
 ## Borrowed and adapted from http://hustoknow.blogspot.com/2011/01/bash-script-to-check-disk-space.html
 ##################################################################
 function CheckDiskSpace {
-  echo ""
-  echo "$FUNCNAME"
-  echo ""
+echo ""
+echo "$FUNCNAME"
+echo ""
 
-    # Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
-    # awk grabs the fourth column (Free), and cut removes the trailing G.
-    DESTDISKSPACE="$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)"
-    # Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
-    # awk grabs the second column (Size), and cut removes the trailing G.
-    SOURCEDISKSPACE="$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)"
+# Extract the disk space percentage capacity -- df dumps things out, sed strips the first line,
+# awk grabs the fourth column (Free), and cut removes the trailing G.
+DESTDISKSPACE="$(df -H $DIR | sed '1d' | awk '{print $4}' | cut -d'G' -f1)"
+# Extract the source (SD Card) disk space percentage capacity -- df dumps things out, sed strips the first line,
+# awk grabs the second column (Size), and cut removes the trailing G.
+SOURCEDISKSPACE="$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)"
 
-    # Disk capacity check
-    echo "Checking if there is enough diskspace for one more backup..."      
-    if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
-      echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
-      exit 1
-    else
-      echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
-    fi
+# Disk capacity check
+echo "Checking if there is enough diskspace for one more backup..."      
+if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
+  echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
+  exit 1
+else
+  echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
+fi
 }
 
 
@@ -469,7 +513,7 @@ if [[ ! -z "$1" ]]; then
 		do
     			case $FLAG in
         		r  )
-        			## Check if the command line includes at patchfile to 
+        			## Check if the command line includes a delta file to 
         			## use and pass it to the RestoreBackup function
         			echo "RestoreBackup $OPTARG"
         		;;
