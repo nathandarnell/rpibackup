@@ -184,11 +184,11 @@ clear
 echo "Starting RaspberryPi backup process!"
 
 ## First check if pv package is installed, if not, install it first
+echo "Checking to see if "PV" is installed..."
 PACKAGESTATUS=$(dpkg -s pv | grep Status);
-
 if [[ $PACKAGESTATUS == S* ]]; then
   echo "Package 'pv' is installed"
-  else
+else
   echo "Package 'pv' is NOT installed"
   echo "Installing package 'pv'. Please wait..."
   apt-get -y install pv
@@ -199,9 +199,10 @@ echo "Checking for the backup directory $DIR..."
 if [[ ! -d "$DIR" ]]; then
   echo "Backup directory $DIR doesn't exist, creating it now!"
   mkdir $DIR
+else
+  echo "$DIR does exist!"
 fi
 }
-
 
 
 ##################################################################
@@ -266,7 +267,6 @@ fi
 }
 
 
-
 ##################################################################
 ## Turn on and off the services listed in $SERVICES
 ##################################################################
@@ -324,7 +324,8 @@ echo "Backing up SD card to .IMG file on HDD"
 SDSIZE=$(blockdev --getsize64 /dev/mmcblk0);
 pv -tpreb /dev/mmcblk0 -s "$SDSIZE" | dd of="$OFILE" bs=1M conv=sync,noerror iflag=fullblock
 
-## Finalize the backup
+## Finalize the backup if it completed or else it leaves a file without the 
+## appropriate extension behind so it can be found and deleted later
 mv "$OFILE" "$OFILEFINAL"
 echo "RaspberryPI backup process completed!"
 echo "The Backup file is: $OFILEFINAL"
