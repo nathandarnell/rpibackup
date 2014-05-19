@@ -111,6 +111,8 @@ if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
     ## Base the delta on the most resent weekly backup
     DELTAORIG="$(find "$DIR" -maxdepth 1 -name "*weekly.img" | sort -rn | head -1)"
   else
+  find "$DIR" -maxdepth 1 -name "*weekly.img" ## Test
+  find "$DIR" -maxdepth 1 -name "*weekly.img" | sort -rn | head -1 ## Test
     echo "There are no weekly backups to base the delta on.  Something must have gone wrong..."
     return 1 ## I think this means there was an error??
   fi
