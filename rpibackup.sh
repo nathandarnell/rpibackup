@@ -107,7 +107,7 @@ echo "$FUNCNAME"
 echo ""
 if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
   ## Check if there is a weekly backup to use as the base for the delta file
-  if [[ -s "$(find "$DIR" -maxdepth 1 -name "*weekly.img")" ]]; then
+  if [[ -s "$(find "$DIR" -maxdepth 1 -name "*weekly.img" | sort -rn | head -1)" ]]; then
     ## Base the delta on the most resent weekly backup
     DELTAORIG="$(find "$DIR" -maxdepth 1 -name "*weekly.img" | sort -rn | head -1)"
   else
