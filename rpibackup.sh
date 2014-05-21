@@ -133,6 +133,8 @@ if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
   rm -f "$OFILEFINAL" 
 ## Remove old delta backups beyond $KEEPDAILY
 PurgeOldBackups delta
+## List all the delta backups
+ListBackups delta
 else
   return
 fi
