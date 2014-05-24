@@ -74,7 +74,8 @@ if [[ "$(find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" | wc -l)" 
   find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" -exec rm {} \;
   ListBackups "$1"
 else
-      echo "There were no backups older than $KEEPTIME days to delete."
+  echo "There were no backups older than $KEEPTIME days to delete."
+  ListBackups "$1"
 fi
 ## Only run this for dailys and deltas
 if [[ $1 = daily ]] || [[ $1 = delta ]]; then
