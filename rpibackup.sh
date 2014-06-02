@@ -135,7 +135,7 @@ if [[ ! $INCREMENTALBACKUPS == 0 ]]; then
 ## Remove old delta backups beyond $KEEPDAILY
 PurgeOldBackups delta
 ## List all the delta backups
-ListBackups delta
+
 else
   return
 fi
@@ -335,8 +335,7 @@ mv "$OFILE" "$OFILEFINAL"
 echo "RaspberryPI backup process completed!"
 echo "The Backup file is: $OFILEFINAL"
 ListBackups daily
-## Remove old daily backups beyond $KEEPDAILY
-PurgeOldBackups daily
+
 }
 
 
@@ -368,7 +367,6 @@ function WeeklyMonthlyBackups {
 
 ## Remove old weekly backups
 PurgeOldBackups weekly
-ListBackups weekly
 
 ## Make monthly backup
 echo ""
@@ -389,7 +387,7 @@ else
 fi
 ## Remove old monthly backups beyond $KEEPMONTHLY
 PurgeOldBackups monthly
-ListBackups monthly
+
 }
 
 ##################################################################
@@ -444,6 +442,8 @@ else
   DeclaredServices stop
   WriteBackupToDisk
   DeclaredServices start
+  ## Remove old daily backups beyond $KEEPDAILY
+  PurgeOldBackups daily
   WeeklyMonthlyBackups
   MakeIncrementalBackup
 fi
