@@ -18,14 +18,15 @@ SERVICES="  avahi-daemon
             nginx 
             nullmailer 
             monitorix"        ## Declare what services to stop and start 
-SERVICESDIR=/etc/init.d             ## Point to where all the services are located to look for them and start and stop them.  May be another location that works better for this...
+                              ## Add any services and the script will shut them down if they are running
+SERVICESDIR=/etc/init.d       ## Point to where all the services are located to look for them and start and stop them.  May be another location that works better for this...
 SUBDIR=RaspberryPi2_backups   ## Setting up backup directories
 DIR=/media/1TB/$SUBDIR        ## Change to where you want the backups to be stored
 KEEPDAILY=7                   ## How many daily (7 = 7 daily backups kept at one time), weekly, and monthly backups to keep
 KEEPWEEKLY=28                 ## As of now, this needs to be in days (4 weeks = 28 days = 4 backups kept for the weekly backup)
 KEEPMONTHLY=90                ## So does this (3 months = 90 days = 3 monthly backups kept)
 INCREMENTALBACKUPS=1          ## Set this to 0 if you want to disable incremental backups or make it 1 to enable them
-PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+PATH="/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"  ## Prevents errors when running as a cron job
 ##################################################################
 ## /CONFIGURE
 ##################################################################
@@ -70,7 +71,8 @@ fi
 echo "Looking for backups older than $KEEPTIME days..."
 if [[ "$(find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" | wc -l)" -ge "1" ]]; then
   echo "Found backups older than $KEEPTIME days!"
-  echo "Deleting the backups older than $KEEPTIME days..."
+  echo "Deleting the backups older than $KEEPTIME days:"
+  find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME"
   find $DIR -maxdepth 1 -name "*$KEEPTYPE" -mtime +"$KEEPTIME" -exec rm {} \;
   ListBackups "$1"
 else
@@ -179,6 +181,7 @@ fi
 
 ##################################################################
 ## Check for PV to give a status bar for the writing and
+## check for xdelta3 to do incremental backups (if selected) and
 ## check for $DIR to write the backups to
 ##################################################################
 function InitialSetup {
@@ -189,7 +192,7 @@ clear
 echo "Starting RaspberryPi backup process!"
 
 ## First check if pv package is installed, if not, install it first
-echo "Checking to see if "PV" is installed..."
+echo "Checking to see if 'PV' is installed..."
 PACKAGESTATUS=$(dpkg -s pv | grep Status);
 if [[ $PACKAGESTATUS == S* ]]; then
   echo "Package 'pv' is installed"
@@ -198,6 +201,22 @@ else
   echo "Installing package 'pv'. Please wait..."
   apt-get -y install pv
 fi
+
+if [[ $INCREMENTALBACKUPS == 1 ]]; then
+  echo "Checking to see if 'Xdelta3' is installed..."
+  PACKAGESTATUS=$(dpkg -s xdelta3 | grep Status);
+  if [[ $PACKAGESTATUS == S* ]]; then
+    echo "Package 'Xdelta3' is installed"
+  else
+    echo "Package 'Xdelta3' is NOT installed"
+    echo "Installing package 'pv'. Please wait..."
+    apt-get -y install xdelta3
+  fi
+fi
+
+
+
+
 
 ## Check if backup directory exists
 echo "Checking for the backup directory $DIR..."
@@ -264,10 +283,10 @@ SOURCEDISKSPACE="$(df -H / | sed '1d' | awk '{print $2}' | cut -d'G' -f1)"
 # Disk capacity check
 echo "Checking if there is enough diskspace for one more backup..."      
 if [[ "$SOURCEDISKSPACE" -ge "$DESTDISKSPACE" ]]; then
-  echo "Not enough disk space on source ($DESTDISKSPACE) for backup, need $SOURCEDISKSPACE"
+  echo "Not enough disk space on source ($DESTDISKSPACE GB) for backup, need $SOURCEDISKSPACE GB."
   exit 1
 else
-  echo "There is enough disk space on source ($DESTDISKSPACE) for backup, we need $SOURCEDISKSPACE."
+  echo "There is enough disk space on source ($DESTDISKSPACE GB) for backup, we need $SOURCEDISKSPACE GB."
 fi
 }
 
