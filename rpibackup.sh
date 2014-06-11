@@ -146,6 +146,7 @@ fi
 
 ## Adapted from: http://stackoverflow.com/a/15808052
 function RestoreIncrementalBackup {
+## Xdelta3 usage https://code.google.com/p/xdelta/wiki/CommandLineSyntax
 ## Check if a deltafile was passed
 if [[ -z "$1" ]]; then
 ## If no deltafile was passed then get the user to select one
