@@ -191,17 +191,18 @@ clear
 ## Start the backup
 echo "Starting RaspberryPi backup process!"
 
-## First check if pv package is installed, if not, install it first
+## First check if pv package is installed, if not, install it
 echo "Checking to see if 'PV' is installed..."
 PACKAGESTATUS=$(dpkg -s pv | grep Status);
 if [[ $PACKAGESTATUS == S* ]]; then
-  echo "Package 'pv' is installed"
+  echo "Package 'PV' is installed"
 else
-  echo "Package 'pv' is NOT installed"
-  echo "Installing package 'pv'. Please wait..."
+  echo "Package 'PV' is NOT installed"
+  echo "Installing package 'PV'. Please wait..."
   apt-get -y install pv
 fi
 
+## First check if Xdelta3 is installed, if not, install it
 if [[ $INCREMENTALBACKUPS == 1 ]]; then
   echo "Checking to see if 'Xdelta3' is installed..."
   PACKAGESTATUS=$(dpkg -s xdelta3 | grep Status);
@@ -209,14 +210,10 @@ if [[ $INCREMENTALBACKUPS == 1 ]]; then
     echo "Package 'Xdelta3' is installed"
   else
     echo "Package 'Xdelta3' is NOT installed"
-    echo "Installing package 'pv'. Please wait..."
+    echo "Installing package 'Xdelta3'..."
     apt-get -y install xdelta3
   fi
 fi
-
-
-
-
 
 ## Check if backup directory exists
 echo "Checking for the backup directory $DIR..."
